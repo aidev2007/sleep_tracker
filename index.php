@@ -684,7 +684,7 @@ $stats = calculate_stats();
             margin: 20px auto;
             padding: 10px;
             text-align:center;
-            font-size:2.5rem;
+            /*font-size:1.2rem;*/
             color: var(--primary-color);
         }
         
@@ -1218,8 +1218,9 @@ if (file_exists(FILE_PATH)) {
                 <h2><i class="fas fa-user-lock"></i> 認証</h2>
                 <?php if ($is_authenticated): ?>
                     <div class="authentication-status">
-                        <i class="fas fa-unlock"></i> → <i class="fas fa-lock"></i>
+<!--                        <i class="fas fa-unlock"></i> → <i class="fas fa-lock"></i>-->
 <!--                      <i class="fas fa-lock-open"></i> → <i class="fas fa-lock"></i>-->
+                        <p>オーナー認証を解除し、本ブラウザでの書き込みをロックします。</p>
                     </div>
                     <form method="post">
                         <input type="hidden" name="action" value="deauthenticate">
@@ -1231,8 +1232,9 @@ if (file_exists(FILE_PATH)) {
                     </form>
                 <?php else: ?>
                     <div class="authentication-status">
-                        <i class="fas fa-lock"></i> → <i class="fas fa-unlock"></i>
+<!--                        <i class="fas fa-lock"></i> → <i class="fas fa-unlock"></i>-->
 <!--                        <i class="fas fa-lock"></i> → <i class="fas fa-lock-open"></i>-->
+                        <p>オーナー認証を行い、書き込みロックを解除します。</p>
                     </div>
                     <form method="post" class="auth-form" id="authForm">
                         <input type="hidden" name="action" value="authenticate">
