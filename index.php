@@ -533,6 +533,8 @@ $stats = calculate_stats();
             width: 100%;
             height: 100%;
             -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
         }
 
         .form-row .time-input {
