@@ -163,16 +163,25 @@ function calculate_daily_sleep_stats() {
     // 日付でソート
     ksort($daily_sleep);
 
+    // --- ここから修正 ---
+    // 昨日までのデータだけで平均を計算
+    $yesterday_str = (new DateTime('yesterday'))->format('Y-m-d');
+    $filtered_sleep = array_filter(
+        $daily_sleep,
+        function($k) use ($yesterday_str) { return $k <= $yesterday_str; },
+        ARRAY_FILTER_USE_KEY
+    );
+
     // 各期間の平均を計算（0時間の日も含める）
     $stats = [];
     $periods = [1, 2, 3, 7, 30, 60, 90, 180, 365];
-    $all_days = array_keys($daily_sleep);
+    $all_days = array_keys($filtered_sleep);
     $total_days = count($all_days);
     foreach ($periods as $days) {
         if ($total_days < $days) {
-            $recent_days = $daily_sleep;
+            $recent_days = $filtered_sleep;
         } else {
-            $recent_days = array_slice($daily_sleep, -$days, $days, true);
+            $recent_days = array_slice($filtered_sleep, -$days, $days, true);
         }
         $stats[$days] = !empty($recent_days) ? round(array_sum($recent_days) / count($recent_days), 2) : 0;
     }
