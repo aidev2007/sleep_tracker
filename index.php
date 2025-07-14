@@ -386,6 +386,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $lines = explode("\n", str_replace("\r\n", "\n", $_POST['filedata']));
         $lines = array_filter($lines, 'strlen'); // 空行を除去
         $lines = array_reverse($lines); // 表示時に反転しているので再反転
+        // スペースをTに戻す
+        foreach ($lines as &$l) {
+            // 日付部分のスペース1箇所だけTに置換
+            $l = preg_replace('/(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})/', '$1T$2', $l);
+            $l = preg_replace('/,(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})/', ',$1T$2', $l);
+        }
         $content = implode("\n", $lines) . "\n"; // 最後に改行を追加
         file_put_contents(FILE_PATH, mb_convert_encoding($content, 'SJIS', 'UTF-8'));
     }
@@ -1189,6 +1195,10 @@ $stats = calculate_stats();
                     <textarea name="filedata" id="filedata" class="form-control"><?php
 if (file_exists(FILE_PATH)) {
     $lines = array_reverse(file(FILE_PATH, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+    // Tをスペースに置換して表示
+    foreach ($lines as &$l) {
+        $l = preg_replace('/T/', ' ', $l);
+    }
     echo htmlspecialchars(mb_convert_encoding(implode("\n", $lines) . "\n", 'UTF-8', 'SJIS'));
 }
 ?></textarea>
