@@ -370,7 +370,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 update_last_record($input_datetime);
             }
             // リダイレクト先を設定
-            $redirectTo = 'sleep_tracker.php';
+            $redirectTo = 'index.php';
         }
     }
     if (isset($_POST['filedata'])) {
@@ -515,9 +515,9 @@ $stats = calculate_stats();
         }
 
         .form-row input, .form-row select {
-          width: 100%;
-          height: 100%;
-          -webkit-appearance: none;
+            width: 100%;
+            height: 100%;
+            -webkit-appearance: none;
         }
 
         .form-row .time-input {
@@ -665,12 +665,12 @@ $stats = calculate_stats();
         }
         
         .authentication-status {
-          max-width: calc(800px - 20%);
-          margin: 20px auto;
-          padding: 10px;
-          text-align:center;
-          font-size:2.5rem;
-          color: var(--primary-color);
+            max-width: calc(800px - 20%);
+            margin: 20px auto;
+            padding: 10px;
+            text-align:center;
+            font-size:2.5rem;
+            color: var(--primary-color);
         }
         
         @media (max-width: 790px) {
@@ -840,7 +840,7 @@ $stats = calculate_stats();
         }
 
         #filedata {
-          padding: 10px;
+            padding: 10px;
         }
         
         .stats-list {
@@ -859,7 +859,7 @@ $stats = calculate_stats();
             }
 
             .btn-container {
-              margin: 0px;
+                margin: 0px;
             }
 
             .overview-grid {
@@ -950,7 +950,7 @@ $stats = calculate_stats();
 </head>
 <body>
     <header>
-        <a href="https://ak2.jp/sleep_tracker.php"><h1><i class="fas fa-bed"></i> 睡眠時間ログ</h1></a>
+        <a href="index.php"><h1><i class="fas fa-bed"></i> 睡眠時間ログ</h1></a>
     </header>
     
     <div class="container">
@@ -1151,19 +1151,19 @@ $stats = calculate_stats();
                         <div class="overview-item">
                             <div class="overview-label">記録開始日</div>
                             <div class="overview-value-div">
-                              <span class="overview-value"><?php echo $stats['start_date'] ? $stats['start_date']->format('Y/m/d') : '-'; ?></span>
+                                <span class="overview-value"><?php echo $stats['start_date'] ? $stats['start_date']->format('Y/m/d') : '-'; ?></span>
                             </div>
                         </div>
                         <div class="overview-item">
                             <div class="overview-label">記録期間</div>
                             <div class="overview-value-div">
-                              <span class="overview-value"><?php echo $stats['days_count']; ?></span> <span class="overview-unit">日</span>
+                                <span class="overview-value"><?php echo $stats['days_count']; ?></span> <span class="overview-unit">日</span>
                             </div>
                         </div>
                         <div class="overview-item">
                             <div class="overview-label">総睡眠回数</div>
                             <div class="overview-value-div">
-                              <span class="overview-value"><?php echo $stats['total_records']; ?></span> <span class="overview-unit">回</span>
+                                <span class="overview-value"><?php echo $stats['total_records']; ?></span> <span class="overview-unit">回</span>
                             </div>
                         </div>
                     </div>
@@ -1199,15 +1199,15 @@ if (file_exists(FILE_PATH)) {
                 <h2><i class="fas fa-user-lock"></i> 認証</h2>
                 <?php if ($is_authenticated): ?>
                     <div class="authentication-status">
-                      <i class="fas fa-unlock"></i> → <i class="fas fa-lock"></i>
+                        <i class="fas fa-unlock"></i> → <i class="fas fa-lock"></i>
 <!--                      <i class="fas fa-lock-open"></i> → <i class="fas fa-lock"></i>-->
                     </div>
                     <form method="post">
                         <input type="hidden" name="action" value="deauthenticate">
                         <div class="btn-container">
-                          <button class="auth-button deauthenticate btn">
-                              <i class="fas fa-lock"></i> ロック
-                          </button>
+                            <button class="auth-button deauthenticate btn">
+                                <i class="fas fa-lock"></i> ロック
+                            </button>
                         </div>
                     </form>
                 <?php else: ?>
@@ -1342,7 +1342,7 @@ if (file_exists(FILE_PATH)) {
 
         // 経過時間の更新処理
         function updateElapsedTime() {
-            fetch('sleep_tracker.php?action=get_elapsed_time&current_action=<?php echo $action; ?>')
+            fetch('index.php?action=get_elapsed_time&current_action=<?php echo $action; ?>')
                 .then(response => response.json())
                 .then(data => {
                     const elapsedTimeElement = document.getElementById('elapsed-time-value');
@@ -1370,7 +1370,7 @@ if (file_exists(FILE_PATH)) {
                 return;
             }
 
-            fetch('sleep_tracker.php?action=get_current_datetime')
+            fetch('index.php?action=get_current_datetime')
                 .then(response => response.json())
                 .then(data => {
                     const dateInput = document.getElementById('date');
@@ -1399,7 +1399,7 @@ if (file_exists(FILE_PATH)) {
 
         document.getElementById('loadmore')?.addEventListener('click', async () => {
             try {
-                const res = await fetch('sleep_tracker.php?action=load_more&offset=' + offset);
+                const res = await fetch('index.php?action=load_more&offset=' + offset);
                 const rows = await res.json();
                 
                 if (rows.length === 0) {
