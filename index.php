@@ -280,18 +280,16 @@ function get_latest_datetime() {
 function calculate_elapsed_time($action) {
     $latest_dt = get_latest_datetime();
     if ($latest_dt === null) return null;
-    
+
     $now = new DateTime();
-    $interval = $now->diff($latest_dt);
-    
-    // 30分単位に丸める
-    $total_minutes = ($interval->days * 24 * 60) + ($interval->h * 60) + $interval->i;
-    $rounded_minutes = round($total_minutes / 30) * 30;
-    
+    $diff_seconds = $now->getTimestamp() - $latest_dt->getTimestamp();
+    $is_negative = $diff_seconds < 0;
+    $abs_seconds = abs($diff_seconds);
+    $rounded_minutes = round($abs_seconds / 60 / 30) * 30; // 30分単位
     $hours = floor($rounded_minutes / 60);
     $minutes = $rounded_minutes % 60;
-    
-    return sprintf('%02d:%02d', $hours, $minutes);
+    $sign = $is_negative ? '-' : '';
+    return sprintf('%s%02d:%02d', $sign, $hours, $minutes);
 }
 
 $page = $_GET['page'] ?? 'record';
@@ -303,9 +301,11 @@ if (isset($_GET['action'])) {
     header('Content-Type: application/json');
     
     if ($_GET['action'] === 'get_elapsed_time') {
-        $action = $_GET['current_action'] ?? 'sleep';
+        $action = get_latest_status();
+        $wake_stat =  $action === 'sleep' ? '起床中' : '就寝中';
         $elapsed = calculate_elapsed_time($action);
-        echo json_encode(['elapsed_time' => $elapsed]);
+        $display = '<i class="fas fa-clock"></i> ' . $wake_stat . ' ' . $elapsed;
+        echo json_encode(['display' => $display]);
         exit;
     }
     
@@ -1351,12 +1351,13 @@ if (file_exists(FILE_PATH)) {
 
         // 経過時間の更新処理
         function updateElapsedTime() {
-            fetch('index.php?action=get_elapsed_time&current_action=<?php echo $action; ?>')
+            fetch('index.php?action=get_elapsed_time')
                 .then(response => response.json())
                 .then(data => {
                     const elapsedTimeElement = document.getElementById('elapsed-time-value');
-                    if (elapsedTimeElement && data.elapsed_time) {
-                        elapsedTimeElement.textContent = data.elapsed_time;
+                    if (elapsedTimeElement && data.display) {
+                        // 状態＋時間をセットで上書き
+                        elapsedTimeElement.parentElement.innerHTML = data.display;
                     }
                 });
         }
