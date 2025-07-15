@@ -255,7 +255,8 @@ function get_latest_status() {
     foreach ($lines as $line) {
         $fields = str_getcsv(mb_convert_encoding($line, 'UTF-8', 'SJIS'));
         if (count($fields) >= 2) {
-            return trim($fields[1]) === '' ? 'wake' : 'sleep';
+            // 本来の直感的な判定: wakeが空なら'sleep'（就寝中）、入っていれば'wake'（起床中）
+            return trim($fields[1]) === '' ? 'sleep' : 'wake';
         }
     }
     return 'sleep';
@@ -302,7 +303,7 @@ if (isset($_GET['action'])) {
     
     if ($_GET['action'] === 'get_elapsed_time') {
         $action = get_latest_status();
-        $wake_stat =  $action === 'sleep' ? '起床中' : '就寝中';
+        $wake_stat =  $action === 'sleep' ? '就寝中' : '起床中';
         $elapsed = calculate_elapsed_time($action);
         $display = '<i class="fas fa-clock"></i> ' . $wake_stat . ' ' . $elapsed;
         echo json_encode(['display' => $display]);
@@ -380,9 +381,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = '過去の日時は入力できません。最新の記録より後の時間を指定してください。';
         } else {
             if (get_latest_status() === 'sleep') {
-                save_record($input_datetime);
-            } else {
                 update_last_record($input_datetime);
+            } else {
+                save_record($input_datetime);
             }
             // リダイレクト先を設定
             $redirectTo = 'index.php';
@@ -1013,9 +1014,9 @@ $stats = calculate_stats();
                 $label = $action === 'sleep' ? '寝た日時' : '起きた日時';
                 $icon = $action === 'sleep' ? 'fa-bed' : 'fa-sun';
                 $icon_kind = $action === 'sleep' ? 'sleep-icon' : 'wake-icon';
-                $save_name = $action === 'sleep' ? '就寝時間記録' : '起床時間記録';
-                $button_color = $action === 'sleep' ? 'sleep-color' : 'wake-color';
-                $wake_stat =  $action === 'sleep' ? '起床中' : '就寝中';
+                $save_name = $action === 'sleep' ? '起床時間記録' : '就寝時間記録';
+                $button_color = $action === 'sleep' ? 'wake-color' : 'sleep-color';
+                $wake_stat =  $action === 'sleep' ? '就寝中' : '起床中';
                 ?>
                 
                 <form method="post">
@@ -1461,7 +1462,10 @@ if (file_exists(FILE_PATH)) {
             let hour = now.getHours();
             let minute = now.getMinutes();
             minute = minute < 30 ? '00' : '30';
-            const dateStr = now.toISOString().slice(0, 10);
+            // ローカルタイム基準で日付を生成
+            const dateStr = now.getFullYear() + '-' +
+                String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                String(now.getDate()).padStart(2, '0');
             document.getElementById('date').value = dateStr;
             // time select生成
             const timeSelect = document.getElementById('time');
@@ -1479,17 +1483,20 @@ if (file_exists(FILE_PATH)) {
         }
         setDefaultDateTime();
 
+        let lastIsSleep = null;
         // フォーム行を最新行の状態に更新する関数
         function updateFormRowByLatestRow() {
             if (!latestRow) return;
             // 状態判定
-            const isSleep = !latestRow.wake; // wakeが空なら「起床中」→次は「寝た日時」入力
+            const isSleep = !latestRow.wake;
+            if (lastIsSleep === isSleep) return; // 状態が変わったときだけ更新
+            lastIsSleep = isSleep;
             // ラベル・アイコン
             const label = isSleep ? '寝た日時' : '起きた日時';
             const icon = isSleep ? 'fa-bed' : 'fa-sun';
             const iconKind = isSleep ? 'sleep-icon' : 'wake-icon';
-            const saveName = isSleep ? '就寝時間記録' : '起床時間記録';
-            const buttonColor = isSleep ? 'sleep-color' : 'wake-color';
+            const saveName = isSleep ? '起床時間記録' : '就寝時間記録';
+            const buttonColor = isSleep ? 'wake-color' : 'sleep-color';
             // ラベル部分
             const labelElem = document.querySelector('label[for="date"]');
             if (labelElem) {
@@ -1519,7 +1526,9 @@ if (file_exists(FILE_PATH)) {
             let minutes = Math.round(diffMs / 1000 / 60 / 30) * 30;
             let hours = Math.floor(minutes / 60);
             minutes = minutes % 60;
-            const action = latestRow.wake ? '就寝中' : '起床中';
+            // isSleepをここで定義
+            const isSleep = !latestRow.wake;
+            const action = isSleep ? '就寝中' : '起床中';
             const display = `${action} ${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`.replace('-00:00', '00:00');
             if (display !== lastElapsedDisplay) {
                 document.getElementById('elapsed-time-value').innerHTML = display;
