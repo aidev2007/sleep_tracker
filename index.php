@@ -343,6 +343,12 @@ if (isset($_GET['action'])) {
         echo json_encode($records);
         exit;
     }
+
+    if ($_GET['action'] === 'get_log_mtime') {
+        $mtime = file_exists(FILE_PATH) ? filemtime(FILE_PATH) : 0;
+        echo json_encode(['mtime' => $mtime]);
+        exit;
+    }
 }
 
 // 認証処理
@@ -1407,15 +1413,61 @@ if (file_exists(FILE_PATH)) {
                 });
         }
 
+        let lastLogMtime = null;
+
+        // 最近の記録テーブルを再描画する関数
+        function reloadRecentLog() {
+            fetch('index.php?action=load_more&offset=0')
+                .then(res => res.json())
+                .then(rows => {
+                    const tbody = document.querySelector('#log tbody');
+                    if (!tbody) return;
+                    tbody.innerHTML = '';
+                    for (const r of rows) {
+                        const tr = document.createElement('tr');
+                        const td1 = document.createElement('td');
+                        const td2 = document.createElement('td');
+                        const td3 = document.createElement('td');
+                        // 日付表示をm/d H:i形式に
+                        td1.textContent = r.sleep.replace(/\d{4}-(\d{2})-(\d{2})T(\d{2}):(\d{2})/, '$1/$2 $3:$4');
+                        if (r.wake) {
+                            td2.textContent = r.wake.replace(/\d{4}-(\d{2})-(\d{2})T(\d{2}):(\d{2})/, '$1/$2 $3:$4');
+                        } else {
+                            td2.textContent = '-';
+                        }
+                        td3.textContent = r.hours !== null ? (parseFloat(r.hours).toFixed(1) + ' h') : '-';
+                        tr.append(td1, td2, td3);
+                        tbody.appendChild(tr);
+                    }
+                });
+        }
+
+        // ログファイルのmtimeを監視し、変化があればテーブルを再描画
+        function checkLogUpdate() {
+            fetch('index.php?action=get_log_mtime')
+                .then(res => res.json())
+                .then(data => {
+                    if (lastLogMtime === null) {
+                        lastLogMtime = data.mtime;
+                        reloadRecentLog(); // 初回は必ず描画
+                    } else if (data.mtime !== lastLogMtime) {
+                        lastLogMtime = data.mtime;
+                        reloadRecentLog();
+                    }
+                });
+        }
+
         // 1秒ごとに更新
         setInterval(() => {
             updateElapsedTime();
             updateDateTimeInputs();
-        }, 3000);
+            checkLogUpdate();
+        }, 1000);
 
         // 初期表示時にも更新
         updateElapsedTime();
         updateDateTimeInputs();
+        checkLogUpdate();
 
         // もっと読み込むボタンの処理
         let offset = <?php echo LOAD_LIMIT; ?>;
