@@ -1495,7 +1495,7 @@ if (file_exists(FILE_PATH)) {
             let hours = Math.floor(minutes / 60);
             minutes = minutes % 60;
             const action = latestRow.wake ? '就寝中' : '起床中';
-            const display = `${action} ${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            const display = `${action} ${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`.replace('-00:00', '00:00');
             if (display !== lastElapsedDisplay) {
                 document.getElementById('elapsed-time-value').innerHTML = display;
                 lastElapsedDisplay = display;
