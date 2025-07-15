@@ -1479,6 +1479,31 @@ if (file_exists(FILE_PATH)) {
         }
         setDefaultDateTime();
 
+        // フォーム行を最新行の状態に更新する関数
+        function updateFormRowByLatestRow() {
+            if (!latestRow) return;
+            // 状態判定
+            const isSleep = !latestRow.wake; // wakeが空なら「起床中」→次は「寝た日時」入力
+            // ラベル・アイコン
+            const label = isSleep ? '寝た日時' : '起きた日時';
+            const icon = isSleep ? 'fa-bed' : 'fa-sun';
+            const iconKind = isSleep ? 'sleep-icon' : 'wake-icon';
+            const saveName = isSleep ? '就寝時間記録' : '起床時間記録';
+            const buttonColor = isSleep ? 'sleep-color' : 'wake-color';
+            // ラベル部分
+            const labelElem = document.querySelector('label[for="date"]');
+            if (labelElem) {
+                labelElem.innerHTML = `<i class=\"fas ${icon} ${iconKind}\"></i> ${label}`;
+            }
+            // ボタン
+            const btn = document.querySelector('.form-row .btn');
+            if (btn) {
+                btn.innerHTML = `<i class=\"fas fa-save\"></i> ${saveName}`;
+                btn.classList.remove('sleep-color', 'wake-color');
+                btn.classList.add(buttonColor);
+            }
+        }
+
         // 経過時間の計算・表示（キャッシュした最新行データを使う）
         let lastElapsedDisplay = '';
         function updateElapsedTimeJS() {
@@ -1500,6 +1525,8 @@ if (file_exists(FILE_PATH)) {
                 document.getElementById('elapsed-time-value').innerHTML = display;
                 lastElapsedDisplay = display;
             }
+            // フォームも更新
+            updateFormRowByLatestRow();
         }
         // 1秒ごとに経過時間のみ更新
         setInterval(updateElapsedTimeJS, 1000);
