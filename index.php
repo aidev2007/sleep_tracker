@@ -1045,7 +1045,7 @@ $stats = calculate_stats();
                         </div>
                         
                         <div id="elapsed-time" class="elapsed-time">
-                            <i class="fas fa-clock"></i> <span id="elapsed-time-value"></span>
+                            <i class="fas fa-clock" id="elapsed-time-icon" style="visibility:hidden"></i> <span id="elapsed-time-value"></span>
                         </div>
                         
                     </div>
@@ -1430,6 +1430,8 @@ if (file_exists(FILE_PATH)) {
                     }
                     // 最新行をキャッシュ
                     latestRow = rows.length > 0 ? rows[0] : null;
+                    // 最新行取得後に経過時間を初回描画
+                    updateElapsedTimeJS();
                 });
         }
 
@@ -1526,12 +1528,14 @@ if (file_exists(FILE_PATH)) {
             let minutes = Math.round(diffMs / 1000 / 60 / 30) * 30;
             let hours = Math.floor(minutes / 60);
             minutes = minutes % 60;
-            // isSleepをここで定義
             const isSleep = !latestRow.wake;
             const action = isSleep ? '就寝中' : '起床中';
             const display = `${action} ${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`.replace('-00:00', '00:00');
             if (display !== lastElapsedDisplay) {
                 document.getElementById('elapsed-time-value').innerHTML = display;
+                // 🕓アイコンを表示
+                const icon = document.getElementById('elapsed-time-icon');
+                if (icon) icon.style.visibility = 'visible';
                 lastElapsedDisplay = display;
             }
             // フォームも更新
