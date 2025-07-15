@@ -1480,6 +1480,7 @@ if (file_exists(FILE_PATH)) {
         setDefaultDateTime();
 
         // 経過時間の計算・表示（キャッシュした最新行データを使う）
+        let lastElapsedDisplay = '';
         function updateElapsedTimeJS() {
             if (!latestRow) return;
             let latestTimeStr = latestRow.wake || latestRow.sleep;
@@ -1494,7 +1495,11 @@ if (file_exists(FILE_PATH)) {
             let hours = Math.floor(minutes / 60);
             minutes = minutes % 60;
             const action = latestRow.wake ? '就寝中' : '起床中';
-            document.getElementById('elapsed-time-value').innerHTML = `${action} ${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            const display = `${action} ${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            if (display !== lastElapsedDisplay) {
+                document.getElementById('elapsed-time-value').innerHTML = display;
+                lastElapsedDisplay = display;
+            }
         }
         // 1秒ごとに経過時間のみ更新
         setInterval(updateElapsedTimeJS, 1000);
