@@ -1027,19 +1027,11 @@ $stats = calculate_stats();
                         <div class="form-row">
                             <div class="date-time-container">
                                 <div class="date-input">
-                                    <input type="date" id="date" name="date" class="form-control" value="<?php echo htmlspecialchars($defaultDate); ?>" required>
+                                    <input type="date" id="date" name="date" class="form-control" required>
                                 </div>
                                 <div class="time-input">
                                     <select name="time" id="time" class="form-control" required>
-                                        <?php
-                                        for ($h = 0; $h < 24; $h++) {
-                                            foreach (["00", "30"] as $m) {
-                                                $timeValue = sprintf('%02d:%s', $h, $m);
-                                                $selected = ($timeValue === $defaultTime) ? ' selected' : '';
-                                                echo '<option value="' . $timeValue . '"' . $selected . '>' . $timeValue . '</option>';
-                                            }
-                                        }
-                                        ?>
+                                        <!-- JSでoptionを生成 -->
                                     </select>
                                 </div>
                             </div>
@@ -1052,12 +1044,7 @@ $stats = calculate_stats();
                         </div>
                         
                         <div id="elapsed-time" class="elapsed-time">
-                            <?php
-                            $elapsed = calculate_elapsed_time($action);
-                            if ($elapsed !== null) {
-                                echo '<i class="fas fa-clock"></i> ' . $wake_stat . ' <span id="elapsed-time-value">' . $elapsed . '</span>';
-                            }
-                            ?>
+                            <i class="fas fa-clock"></i> <span id="elapsed-time-value"></span>
                         </div>
                         
                     </div>
@@ -1414,6 +1401,7 @@ if (file_exists(FILE_PATH)) {
         }
 
         let lastLogMtime = null;
+        let latestRow = null;
 
         // 最近の記録テーブルを再描画する関数
         function reloadRecentLog() {
@@ -1439,6 +1427,8 @@ if (file_exists(FILE_PATH)) {
                         tr.append(td1, td2, td3);
                         tbody.appendChild(tr);
                     }
+                    // 最新行をキャッシュ
+                    latestRow = rows.length > 0 ? rows[0] : null;
                 });
         }
 
@@ -1459,15 +1449,56 @@ if (file_exists(FILE_PATH)) {
 
         // 1秒ごとに更新
         setInterval(() => {
-            updateElapsedTime();
-            updateDateTimeInputs();
             checkLogUpdate();
         }, 1000);
 
-        // 初期表示時にも更新
-        updateElapsedTime();
-        updateDateTimeInputs();
+        // 初期表示時にも
         checkLogUpdate();
+
+        // 日付・時刻のデフォルト値セット
+        function setDefaultDateTime() {
+            const now = new Date(Date.now() + 15 * 60 * 1000); // 15分後
+            let hour = now.getHours();
+            let minute = now.getMinutes();
+            minute = minute < 30 ? '00' : '30';
+            const dateStr = now.toISOString().slice(0, 10);
+            document.getElementById('date').value = dateStr;
+            // time select生成
+            const timeSelect = document.getElementById('time');
+            timeSelect.innerHTML = '';
+            for (let h = 0; h < 24; h++) {
+                for (const m of ['00', '30']) {
+                    const val = `${h.toString().padStart(2, '0')}:${m}`;
+                    const opt = document.createElement('option');
+                    opt.value = val;
+                    opt.textContent = val;
+                    if (val === `${hour.toString().padStart(2, '0')}:${minute}`) opt.selected = true;
+                    timeSelect.appendChild(opt);
+                }
+            }
+        }
+        setDefaultDateTime();
+
+        // 経過時間の計算・表示（キャッシュした最新行データを使う）
+        function updateElapsedTimeJS() {
+            if (!latestRow) return;
+            let latestTimeStr = latestRow.wake || latestRow.sleep;
+            if (!latestTimeStr) return;
+            latestTimeStr = latestTimeStr.replace('T', ' ');
+            const latestDt = new Date(latestTimeStr.replace(/-/g, '/'));
+            const now = new Date();
+            let diffMs = now - latestDt;
+            let sign = '';
+            if (diffMs < 0) { sign = '-'; diffMs = -diffMs; }
+            let minutes = Math.round(diffMs / 1000 / 60 / 30) * 30;
+            let hours = Math.floor(minutes / 60);
+            minutes = minutes % 60;
+            const action = latestRow.wake ? '就寝中' : '起床中';
+            document.getElementById('elapsed-time-value').innerHTML = `${action} ${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        }
+        // 1秒ごとに経過時間のみ更新
+        setInterval(updateElapsedTimeJS, 1000);
+        updateElapsedTimeJS();
 
         // もっと読み込むボタンの処理
         let offset = <?php echo LOAD_LIMIT; ?>;
