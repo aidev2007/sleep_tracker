@@ -7,498 +7,6 @@ define('LOG_FILE', DATA_DIR . '/log.csv');
 define('HTACCESS_FILE', DATA_DIR . '/.htaccess');
 const LOAD_LIMIT = 30;
 
-// 共通CSS
-$COMMON_CSS = <<<CSS
-<style>
-    :root {
-        --primary-color: #4a6da7;
-        --secondary-color: #3a517a;
-        --dark-color: #2c3e50;
-        --danger-color: #e74c3c;
-    }
-    * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-    }
-    body {
-        font-family: 'Helvetica Neue', Arial, sans-serif;
-        line-height: 1.6;
-        color: #333;
-        background-color: #f9f9f9;
-    }
-    .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-    header {
-        background-color: var(--primary-color);
-        color: white;
-        padding: 0.5rem;
-        text-align: center;
-        box-shadow: 5px 5px 10px 0px #cccccc;
-    }
-    header a {
-        text-decoration: none;
-        color:white;
-    }
-    header h1 {
-        font-size: 1.8rem;
-    }
-    nav {
-        background: white;
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 5px 5px 10px 0px #cccccc;
-        margin: 20px 0;
-        display: flex;
-        justify-content: center;
-    }
-    nav a {
-        color: var(--dark-color);
-        text-decoration: none;
-        padding: 10px 20px;
-        margin: 0 10px;
-        border-radius: 5px;
-        transition: all 0.3s ease;
-        font-weight: 500;
-    }
-    nav a:hover {
-        background-color: #eef2f7;
-        color: var(--primary-color);
-    }
-    nav a.active {
-        background-color: var(--primary-color);
-        color: white;
-    }
-    .card {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 5px 5px 10px 0px #cccccc;
-        padding: 25px;
-        margin-bottom: 25px;
-    }
-    .card h2 {
-        color: var(--primary-color);
-        border-bottom: 1px solid #eee;
-    }
-    .form-group {
-        margin: 10px 0px;
-    }
-    .form-group label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: 500;
-        color: var(--dark-color);
-    }
-    .form-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    .form-row .date-time-container {
-        display: flex;
-        gap: 10px;
-        flex: 3;
-        padding:10px 0px;
-    }
-    .form-row .date-input {
-        flex: 2;
-    }
-    .form-row input, .form-row select {
-        width: 100%;
-        height: 100%;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-    }
-    .form-row .time-input {
-        flex: 1;
-    }
-    .form-row .btn-container {
-        flex: 1;
-        display: flex;
-        justify-content: center;
-    }
-    .form-control {
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        font-size: 16px;
-        transition: border-color 0.3s;
-    }
-    .form-control:focus {
-        border-color: var(--primary-color);
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(74, 109, 167, 0.1);
-    }
-    select.form-control {
-        background-image: url('data:image/svg+xml;utf8,<svg fill="%23333" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
-        background-repeat: no-repeat;
-        background-position: right 10px center;
-        background-size: 30px;
-        /*padding-right: 30px;*/
-        /*-webkit-appearance: none;*/
-        -moz-appearance: none;
-        appearance: none;
-    }
-    .btn {
-        background-color: var(--primary-color);
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 1rem;
-        font-weight: 500;
-        text-align: center;
-        transition: background-color 0.3s;
-        width: calc(600px - 30%);
-    }
-    .btn:hover {
-        background-color: var(--secondary-color);
-    }
-    .alert {
-        padding: 15px;
-        border-radius: 5px;
-        margin-bottom: 20px;
-        border-left: 4px solid transparent;
-    }
-    .alert-danger {
-        background-color: #fdf0ed;
-        color: var(--danger-color);
-        border-left-color: var(--danger-color);
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 10px;
-        background: white;
-        border-radius: 5px;
-        overflow: hidden;
-        box-shadow: 0 0 10px rgba(0,0,0,0.05);
-    }
-    th, td {
-        padding: 5px 10px;
-        text-align: center;
-        border-bottom: 1px solid #eee;
-    }
-    th {
-        background-color: #f8f9fa;
-        font-weight: 600;
-        color: var(--dark-color);
-    }
-    tr:hover {
-        background-color: #f8f9fa;
-    }
-    tbody tr:last-child td {
-        border-bottom: none;
-    }
-    textarea {
-        width: 100%;
-        height: 300px;
-        padding: 15px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        resize: vertical;
-        font-family: monospace;
-        font-size: 14px;
-    }
-    .sleep-icon {
-        color: #4a6da7;
-    }
-    .wake-icon {
-        color: #f1c40f;
-    }
-    .hours-icon {
-        color: #2ecc71;
-    }
-    .sleep-color {
-        background-color: #4a6da7;
-    }
-    .wake-color {
-        background-color: #f1c40f !important;
-    }
-    .load-more {
-        display: block;
-        width: 100%;
-        padding: 12px;
-        margin-top: 20px;
-        background-color: #f8f9fa;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        color: var(--dark-color);
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    .load-more:hover {
-        background-color: #e9ecef;
-    }
-    .authentication-status {
-        max-width: calc(800px - 20%);
-        margin: 20px auto;
-        padding: 10px;
-        text-align:center;
-        /*font-size:1.2rem;*/
-        color: var(--primary-color);
-    }
-    @media (max-width: 790px) {
-        nav {
-            flex-direction: row;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-            padding: 5px 10px;
-            margin: 10px auto;
-        }
-        nav a {
-            margin: 0;
-            padding: 8px 15px;
-            font-size: 0.9rem;
-        }
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-        .form-row {
-            flex-direction: column;
-            /*gap: 10px;*/
-        }
-        .form-row .date-time-container {
-            width: 100%;
-        }
-        .form-row .date-input {
-            flex: 2;
-        }
-        .form-row .time-input {
-            flex: 1;
-        }
-        .form-row .btn-container {
-            width: 100%;
-        }
-        .container {
-            padding: 0px 5px;
-        }
-        .card {
-            margin: 10px auto;
-            padding: 10px;
-        }
-    }
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-        margin: 20px 0;
-    }
-    .stat-value {
-        font-size: 2rem;
-        font-weight: bold;
-        color: var(--primary-color);
-    }
-    .stat-label {
-        color: var(--dark-color);
-        font-size: 0.9rem;
-    }
-    .stat-unit {
-        color: #6c757d;
-        font-size: 0.9rem;
-    }
-    .graph-container {
-        width: 100%;
-        height: 400px;
-        margin: 20px 0;
-    }
-    .btn-container {
-        display: flex;
-        justify-content: center;
-        margin: 10px 0;
-    }
-    .load-more {
-        display: none;
-        margin: 20px auto;
-    }
-    .load-more.visible {
-        display: block;
-    }
-    .stats-list {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-        margin: 20px 0;
-    }
-    .stat-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background: white;
-        padding: 0px 15px;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .stat-label {
-        color: var(--dark-color);
-        font-size: 1rem;
-    }
-    .stat-value {
-        font-size: 2rem;
-        font-weight: bold;
-        color: var(--primary-color);
-    }
-    .stat-unit {
-        color: #6c757d;
-        font-size: 0.9rem;
-    }
-    .overview-info {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        padding: 0px 15px;
-        margin: 20px 0;
-    }
-    .overview-info h3 {
-        color: var(--primary-color);
-        font-size: 1.2rem;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #eee;
-    }
-    .overview-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-    }
-    .overview-item {
-        text-align: center;
-        align-items: center;
-    }
-    .overview-label {
-        color: var(--dark-color);
-        font-size: 0.9rem;
-        margin-bottom: 5px;
-    }
-    .overview-value {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: var(--primary-color);
-    }
-    #filedata {
-        padding: 10px;
-    }
-    .stats-list {
-        max-width: 600px;
-        margin: 20px auto;
-    }
-    @media (max-width: 768px) {
-        .container {
-            padding: 0px 5px;
-        }
-        .card {
-            margin: 10px auto;
-            padding: 10px;
-        }
-        .btn-container {
-            margin: 0px;
-        }
-        .overview-grid {
-            grid-template-columns: 1fr;
-        }
-        .overview-item {
-            display: flex;
-            justify-content: space-between;
-        }
-        .overview-value-div {
-            display: flex;
-            align-items: center;
-            text-align: center;
-            gap: 0.25rem;
-        }
-    }
-    .tab-content {
-        display: none;
-    }
-    .tab-content.active {
-        display: block;
-    }
-    .nav-link {
-        cursor: pointer;
-    }
-    .deauthenticate {
-        background-color: var(--danger-color);
-    }
-    .deauthenticate:hover {
-        background-color: #c0392b;
-    }
-    .auth-form {
-        margin-top: 10px;
-        text-align: center;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    .auth-form.active {
-        display: block;
-    }
-    .auth-form .form-group {
-        margin-bottom: 20px;
-    }
-    .auth-form label {
-        display: block;
-        margin-bottom: 10px;
-        font-size: 1.1rem;
-        color: var(--dark-color);
-    }
-    .auth-form input[type="password"] {
-        width: 200px;
-        margin: 0 auto;
-    }
-    .auth-form .btn-container {
-        margin-top: 20px;
-    }
-    .disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        background-color: #2154A6 !important;
-        pointer-events: none;
-    }
-    .elapsed-time {
-        text-align: center;
-        margin-top: 10px;
-        font-size: 1.2rem;
-        color: var(--primary-color);
-    }
-    .elapsed-time i {
-        margin-right: 5px;
-    }
-    @media (max-width: 700px) {
-        .container, .card {
-            max-width: 98vw;
-            padding: 10px;
-        }
-        .btn {
-            max-width: 100vw;
-        }
-    }
-    /* パスワード初期設定画面専用 */
-    .setup-btn {
-        width: 100%;
-        margin-top: 10px;
-    }
-    .setup-input {
-        width: 100%;
-    }
-    .setup_message {
-        color:#444444;
-        margin-bottom: 10px;
-    }
-
-    .addtion {
-        color: #888899;
-        margin-left: 1em;
-        text-indent: -1em;
-        margin-bottom: 20px;
-    }
-
-</style>
-CSS;
-
 // データディレクトリ・ファイルの初期化、.htaccess自動生成
 if (!is_dir(DATA_DIR)) {
     mkdir(DATA_DIR, 0755, true);
@@ -527,7 +35,7 @@ if (!file_exists(PASSWORD_FILE)) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>パスワード初期設定</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        <?php echo $COMMON_CSS; ?>
+        <?php echo get_common_css(); ?>
     </head>
     <body>
         <header>
@@ -563,6 +71,7 @@ if (!file_exists(PASSWORD_FILE)) {
     <?php
     exit;
 }
+
 // パスワード読み込み
 $PASSWORD = trim(file_get_contents(PASSWORD_FILE));
 
@@ -977,7 +486,7 @@ $stats = calculate_stats();
     <title>睡眠時間ログ</title>
     <link rel="icon" type="image/svg+xml" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🛌</text></svg>'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <?php echo $COMMON_CSS; ?>
+    <?php echo get_common_css(); ?>
 </head>
 <body>
     <header>
@@ -1565,3 +1074,499 @@ if (file_exists(LOG_FILE)) {
     </script>
 </body>
 </html>
+
+<?php
+
+// 共通CSS
+function get_common_css() {
+    return <<<CSS
+<style>
+    :root {
+        --primary-color: #4a6da7;
+        --secondary-color: #3a517a;
+        --dark-color: #2c3e50;
+        --danger-color: #e74c3c;
+    }
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    body {
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #f9f9f9;
+    }
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    header {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 0.5rem;
+        text-align: center;
+        box-shadow: 5px 5px 10px 0px #cccccc;
+    }
+    header a {
+        text-decoration: none;
+        color:white;
+    }
+    header h1 {
+        font-size: 1.8rem;
+    }
+    nav {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 5px 5px 10px 0px #cccccc;
+        margin: 20px 0;
+        display: flex;
+        justify-content: center;
+    }
+    nav a {
+        color: var(--dark-color);
+        text-decoration: none;
+        padding: 10px 20px;
+        margin: 0 10px;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+    nav a:hover {
+        background-color: #eef2f7;
+        color: var(--primary-color);
+    }
+    nav a.active {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    .card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 5px 5px 10px 0px #cccccc;
+        padding: 25px;
+        margin-bottom: 25px;
+    }
+    .card h2 {
+        color: var(--primary-color);
+        border-bottom: 1px solid #eee;
+    }
+    .form-group {
+        margin: 10px 0px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: var(--dark-color);
+    }
+    .form-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .form-row .date-time-container {
+        display: flex;
+        gap: 10px;
+        flex: 3;
+        padding:10px 0px;
+    }
+    .form-row .date-input {
+        flex: 2;
+    }
+    .form-row input, .form-row select {
+        width: 100%;
+        height: 100%;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+    .form-row .time-input {
+        flex: 1;
+    }
+    .form-row .btn-container {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+    }
+    .form-control {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+    }
+    .form-control:focus {
+        border-color: var(--primary-color);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(74, 109, 167, 0.1);
+    }
+    select.form-control {
+        background-image: url('data:image/svg+xml;utf8,<svg fill="%23333" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 30px;
+        /*padding-right: 30px;*/
+        /*-webkit-appearance: none;*/
+        -moz-appearance: none;
+        appearance: none;
+    }
+    .btn {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 500;
+        text-align: center;
+        transition: background-color 0.3s;
+        width: calc(600px - 30%);
+    }
+    .btn:hover {
+        background-color: var(--secondary-color);
+    }
+    .alert {
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        border-left: 4px solid transparent;
+    }
+    .alert-danger {
+        background-color: #fdf0ed;
+        color: var(--danger-color);
+        border-left-color: var(--danger-color);
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        background: white;
+        border-radius: 5px;
+        overflow: hidden;
+        box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    th, td {
+        padding: 5px 10px;
+        text-align: center;
+        border-bottom: 1px solid #eee;
+    }
+    th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: var(--dark-color);
+    }
+    tr:hover {
+        background-color: #f8f9fa;
+    }
+    tbody tr:last-child td {
+        border-bottom: none;
+    }
+    textarea {
+        width: 100%;
+        height: 300px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        resize: vertical;
+        font-family: monospace;
+        font-size: 14px;
+    }
+    .sleep-icon {
+        color: #4a6da7;
+    }
+    .wake-icon {
+        color: #f1c40f;
+    }
+    .hours-icon {
+        color: #2ecc71;
+    }
+    .sleep-color {
+        background-color: #4a6da7;
+    }
+    .wake-color {
+        background-color: #f1c40f !important;
+    }
+    .load-more {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        margin-top: 20px;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        color: var(--dark-color);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .load-more:hover {
+        background-color: #e9ecef;
+    }
+    .authentication-status {
+        max-width: calc(800px - 20%);
+        margin: 20px auto;
+        padding: 10px;
+        text-align:center;
+        /*font-size:1.2rem;*/
+        color: var(--primary-color);
+    }
+    @media (max-width: 790px) {
+        nav {
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            padding: 5px 10px;
+            margin: 10px auto;
+        }
+        nav a {
+            margin: 0;
+            padding: 8px 15px;
+            font-size: 0.9rem;
+        }
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        .form-row {
+            flex-direction: column;
+            /*gap: 10px;*/
+        }
+        .form-row .date-time-container {
+            width: 100%;
+        }
+        .form-row .date-input {
+            flex: 2;
+        }
+        .form-row .time-input {
+            flex: 1;
+        }
+        .form-row .btn-container {
+            width: 100%;
+        }
+        .container {
+            padding: 0px 5px;
+        }
+        .card {
+            margin: 10px auto;
+            padding: 10px;
+        }
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+    .stat-label {
+        color: var(--dark-color);
+        font-size: 0.9rem;
+    }
+    .stat-unit {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .graph-container {
+        width: 100%;
+        height: 400px;
+        margin: 20px 0;
+    }
+    .btn-container {
+        display: flex;
+        justify-content: center;
+        margin: 10px 0;
+    }
+    .load-more {
+        display: none;
+        margin: 20px auto;
+    }
+    .load-more.visible {
+        display: block;
+    }
+    .stats-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin: 20px 0;
+    }
+    .stat-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: white;
+        padding: 0px 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .stat-label {
+        color: var(--dark-color);
+        font-size: 1rem;
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+    .stat-unit {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .overview-info {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        padding: 0px 15px;
+        margin: 20px 0;
+    }
+    .overview-info h3 {
+        color: var(--primary-color);
+        font-size: 1.2rem;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    .overview-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .overview-item {
+        text-align: center;
+        align-items: center;
+    }
+    .overview-label {
+        color: var(--dark-color);
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+    .overview-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+    #filedata {
+        padding: 10px;
+    }
+    .stats-list {
+        max-width: 600px;
+        margin: 20px auto;
+    }
+    @media (max-width: 768px) {
+        .container {
+            padding: 0px 5px;
+        }
+        .card {
+            margin: 10px auto;
+            padding: 10px;
+        }
+        .btn-container {
+            margin: 0px;
+        }
+        .overview-grid {
+            grid-template-columns: 1fr;
+        }
+        .overview-item {
+            display: flex;
+            justify-content: space-between;
+        }
+        .overview-value-div {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            gap: 0.25rem;
+        }
+    }
+    .tab-content {
+        display: none;
+    }
+    .tab-content.active {
+        display: block;
+    }
+    .nav-link {
+        cursor: pointer;
+    }
+    .deauthenticate {
+        background-color: var(--danger-color);
+    }
+    .deauthenticate:hover {
+        background-color: #c0392b;
+    }
+    .auth-form {
+        margin-top: 10px;
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .auth-form.active {
+        display: block;
+    }
+    .auth-form .form-group {
+        margin-bottom: 20px;
+    }
+    .auth-form label {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 1.1rem;
+        color: var(--dark-color);
+    }
+    .auth-form input[type="password"] {
+        width: 200px;
+        margin: 0 auto;
+    }
+    .auth-form .btn-container {
+        margin-top: 20px;
+    }
+    .disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background-color: #2154A6 !important;
+        pointer-events: none;
+    }
+    .elapsed-time {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 1.2rem;
+        color: var(--primary-color);
+    }
+    .elapsed-time i {
+        margin-right: 5px;
+    }
+    @media (max-width: 700px) {
+        .container, .card {
+            max-width: 98vw;
+            padding: 10px;
+        }
+        .btn {
+            max-width: 100vw;
+        }
+    }
+    /* パスワード初期設定画面専用 */
+    .setup-btn {
+        width: 100%;
+        margin-top: 10px;
+    }
+    .setup-input {
+        width: 100%;
+    }
+    .setup_message {
+        color:#444444;
+        margin-bottom: 10px;
+    }
+
+    .addtion {
+        color: #888899;
+        margin-left: 1em;
+        text-indent: -1em;
+        margin-bottom: 20px;
+    }
+
+</style>
+CSS;
+}
