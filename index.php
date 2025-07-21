@@ -1,20 +1,71 @@
 <?php
 mb_internal_encoding("UTF-8");
 // =============================
-// 設置者用: 管理用パスワードをここで設定してください。
-// 例: const PASSWORD = 'your-password';
-// この値を任意のパスワードに変更してください。
-const PASSWORD = 'your-password';
-// =============================
+// 設置者用: 管理用パスワードは外部ファイル化（初回起動時に自動生成）
 
-const FILE_PATH = __DIR__ . '/sleep_log.csv';
+define('DATA_DIR', __DIR__ . '/sleep_data');
+define('PASSWORD_FILE', DATA_DIR . '/.password');
+define('LOG_FILE', DATA_DIR . '/log.csv');
+define('HTACCESS_FILE', DATA_DIR . '/.htaccess');
 const LOAD_LIMIT = 30;
 
+// データディレクトリ・ファイルの初期化、.htaccess自動生成
+if (!is_dir(DATA_DIR)) {
+    mkdir(DATA_DIR, 0755, true);
+}
+if (!file_exists(HTACCESS_FILE)) {
+    file_put_contents(HTACCESS_FILE, "Require all denied\n");
+}
+
+// パスワードファイルがなければ初回セットアップ画面
+if (!file_exists(PASSWORD_FILE)) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['setup_password'])) {
+        $pw = trim($_POST['setup_password']);
+        if ($pw !== '') {
+            file_put_contents(PASSWORD_FILE, $pw . "\n");
+            header('Location: index.php');
+            exit;
+        } else {
+            $setup_error = 'パスワードを入力してください。';
+        }
+    }
+    ?>
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <title>パスワード初期設定</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    </head>
+    <body>
+        <div class="container">
+            <div class="card">
+                <h2>パスワード初期設定</h2>
+                <?php if (!empty($setup_error)) echo '<div class="alert">' . htmlspecialchars($setup_error) . '</div>'; ?>
+                <form method="post">
+                    <div class="form-group">
+                        <label for="setup_password">管理用パスワード</label>
+                        <input type="password" id="setup_password" name="setup_password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn">設定</button>
+                </form>
+            </div>
+        </div>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+
+// パスワード読み込み
+$PASSWORD = trim(file_get_contents(PASSWORD_FILE));
+// =============================
+
 function load_data($offset = 0, $limit = LOAD_LIMIT) {
-    if (!file_exists(FILE_PATH)) return [];
+    if (!file_exists(LOG_FILE)) return [];
     
     try {
-        $lines = array_reverse(file(FILE_PATH, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+        $lines = array_reverse(file(LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
         $records = [];
         foreach ($lines as $i => $line) {
             if ($i < $offset) continue;
@@ -209,22 +260,22 @@ function save_record($sleep, $wake = '') {
             return false;
         }
         
-        $dir = dirname(FILE_PATH);
+        $dir = dirname(LOG_FILE);
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
         $line = mb_convert_encoding("{$sleep},{$wake}\n", 'SJIS', 'UTF-8');
-        return file_put_contents(FILE_PATH, $line, FILE_APPEND | LOCK_EX) !== false;
+        return file_put_contents(LOG_FILE, $line, FILE_APPEND | LOCK_EX) !== false;
     } catch (Exception $e) {
         return false;
     }
 }
 
 function update_last_record($wake) {
-    if (!file_exists(FILE_PATH)) return false;
+    if (!file_exists(LOG_FILE)) return false;
     
     try {
-        $lines = file(FILE_PATH, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $lines = file(LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         if (empty($lines)) return false;
         
         $lastLine = array_pop($lines);
@@ -238,7 +289,7 @@ function update_last_record($wake) {
                 $newLine = implode(',', $fields) . "\n";
                 $lines[] = $newLine;
                 $content = implode("\n", $lines) . "\n";
-                return file_put_contents(FILE_PATH, mb_convert_encoding($content, 'SJIS', 'UTF-8')) !== false;
+                return file_put_contents(LOG_FILE, mb_convert_encoding($content, 'SJIS', 'UTF-8')) !== false;
             } catch (Exception $e) {
                 return false;
             }
@@ -250,21 +301,21 @@ function update_last_record($wake) {
 }
 
 function get_latest_status() {
-    if (!file_exists(FILE_PATH)) return 'sleep';
-    $lines = array_reverse(file(FILE_PATH, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+    if (!file_exists(LOG_FILE)) return 'wake'; // ログがなければ「起床中」
+    $lines = array_reverse(file(LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
     foreach ($lines as $line) {
         $fields = str_getcsv(mb_convert_encoding($line, 'UTF-8', 'SJIS'));
         if (count($fields) >= 2) {
-            // 本来の直感的な判定: wakeが空なら'sleep'（就寝中）、入っていれば'wake'（起床中）
+            // wakeが空なら'sleep'（就寝中）、入っていれば'wake'（起床中）
             return trim($fields[1]) === '' ? 'sleep' : 'wake';
         }
     }
-    return 'sleep';
+    return 'wake'; // 有効な記録がなければ「起床中」
 }
 
 function get_latest_datetime() {
-    if (!file_exists(FILE_PATH)) return null;
-    $lines = array_reverse(file(FILE_PATH, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+    if (!file_exists(LOG_FILE)) return null;
+    $lines = array_reverse(file(LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
     foreach ($lines as $line) {
         $fields = str_getcsv(mb_convert_encoding($line, 'UTF-8', 'SJIS'));
         if (count($fields) >= 2) {
@@ -346,7 +397,7 @@ if (isset($_GET['action'])) {
     }
 
     if ($_GET['action'] === 'get_log_mtime') {
-        $mtime = file_exists(FILE_PATH) ? filemtime(FILE_PATH) : 0;
+        $mtime = file_exists(LOG_FILE) ? filemtime(LOG_FILE) : 0;
         echo json_encode(['mtime' => $mtime]);
         exit;
     }
@@ -356,7 +407,7 @@ if (isset($_GET['action'])) {
 $is_authenticated = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'authenticate') {
-        if (isset($_POST['password']) && $_POST['password'] === PASSWORD) {
+        if (isset($_POST['password']) && $_POST['password'] === $PASSWORD) {
             $is_authenticated = true;
             setcookie('owner_authenticated', '1', time() + 86400 * 30, '/', '', true, true);
         } else {
@@ -400,7 +451,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $l = preg_replace('/,(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})/', ',$1T$2', $l);
         }
         $content = implode("\n", $lines) . "\n"; // 最後に改行を追加
-        file_put_contents(FILE_PATH, mb_convert_encoding($content, 'SJIS', 'UTF-8'));
+        file_put_contents(LOG_FILE, mb_convert_encoding($content, 'SJIS', 'UTF-8'));
     }
 }
 
@@ -1189,8 +1240,8 @@ $stats = calculate_stats();
                 <form method="post">
                     <div class="form-group">
                     <textarea name="filedata" id="filedata" class="form-control"><?php
-if (file_exists(FILE_PATH)) {
-    $lines = array_reverse(file(FILE_PATH, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+if (file_exists(LOG_FILE)) {
+    $lines = array_reverse(file(LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
     // Tをスペースに置換して表示
     foreach ($lines as &$l) {
         $l = preg_replace('/T/', ' ', $l);
