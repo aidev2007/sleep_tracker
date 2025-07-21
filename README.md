@@ -22,7 +22,7 @@
 
 ```
 sleep_tracker/
-├── index.php         ... メインアプリ本体
+├── index.php         ... アプリ本体
 ├── sleep_data/       ... データ保存用ディレクトリ（自動生成）
 │   ├── .password     ... パスワード（初回起動時に設定・自動生成）
 │   ├── log.csv       ... 睡眠記録データ（自動生成）
@@ -31,6 +31,7 @@ sleep_tracker/
 └── screenshots.jpg   ... スクリーンショット等（不要）
 ```
 
+- `index.php`だけで動作します。`sleep_tracker.php`等ファイル名を変えて頂いても動作します。
 - `sleep_data/`配下のファイルは、アプリ初回起動時または記録時に自動生成されます。
 - `.htaccess`により、`sleep_data/`ディレクトリはWebから直接アクセスできません。
 
