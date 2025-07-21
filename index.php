@@ -1383,22 +1383,35 @@ if (file_exists(FILE_PATH)) {
 
         // 日時入力の更新処理
         function updateDateTimeInputs() {
-            // 最後のユーザー操作から1分経過していない場合は更新しない
-            if (Date.now() - lastUserInteraction < INTERACTION_TIMEOUT) {
-                return;
-            }
+            // --- ユーザー操作ガード削除 ---
+            // 30分単位のタイミングか、ログファイル更新時のみ更新
+            const dateInput = document.getElementById('date');
+            const timeSelect = document.getElementById('time');
+            if (!dateInput || !timeSelect) return;
 
-            fetch('index.php?action=get_current_datetime')
-                .then(response => response.json())
-                .then(data => {
-                    const dateInput = document.getElementById('date');
-                    const timeSelect = document.getElementById('time');
-                    
-                    if (dateInput && timeSelect) {
-                        dateInput.value = data.date;
-                        timeSelect.value = data.time;
-                    }
-                });
+            // 現在時刻を取得
+            const now = new Date(Date.now() + 15 * 60 * 1000); // 15分後
+            let hour = now.getHours();
+            let minute = now.getMinutes();
+            // 30分単位に丸め
+            minute = minute < 30 ? 0 : 30;
+
+            // 15分00秒・45分00秒のタイミングのみ更新
+            const shouldUpdate = ((now.getMinutes() === 15 || now.getMinutes() === 45) && now.getSeconds() === 0) || window.__logFileUpdated;
+            if (!shouldUpdate) return;
+
+            // ローカルタイム基準で日付を生成
+            const dateStr = now.getFullYear() + '-' +
+                String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                String(now.getDate()).padStart(2, '0');
+            const timeStr = `${hour.toString().padStart(2, '0')}:${minute === 0 ? '00' : '30'}`;
+
+            // 値が異なる場合のみ更新
+            if (dateInput.value !== dateStr) dateInput.value = dateStr;
+            if (timeSelect.value !== timeStr) timeSelect.value = timeStr;
+
+            // ログファイル更新フラグをリセット
+            window.__logFileUpdated = false;
         }
 
         let lastLogMtime = null;
@@ -1446,6 +1459,8 @@ if (file_exists(FILE_PATH)) {
                     } else if (data.mtime !== lastLogMtime) {
                         lastLogMtime = data.mtime;
                         reloadRecentLog();
+                        // --- ログファイル更新時はフォームも更新 ---
+                        window.__logFileUpdated = true;
                     }
                 });
         }
@@ -1544,6 +1559,9 @@ if (file_exists(FILE_PATH)) {
         // 1秒ごとに経過時間のみ更新
         setInterval(updateElapsedTimeJS, 1000);
         updateElapsedTimeJS();
+
+        // 1秒ごとにフォームの日時を自動チェック
+        setInterval(updateDateTimeInputs, 1000);
 
         // もっと読み込むボタンの処理
         let offset = <?php echo LOAD_LIMIT; ?>;
