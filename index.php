@@ -480,8 +480,8 @@ $COMMON_CSS = <<<CSS
     }
     /* パスワード初期設定画面専用 */
     .setup-card {
-        max-width: 400px;
-        margin: 60px auto 0 auto;
+        /* max-width: 400px; */
+        /* margin: 60px auto 0 auto; */
     }
     .setup-btn {
         width: 100%;
@@ -491,9 +491,18 @@ $COMMON_CSS = <<<CSS
         width: 100%;
     }
     .setup_message {
-        font-size: small;
+        /* font-size: small; */
         color:#444444;
         margin-bottom: 10px;
+    }
+
+    .addtion {
+        color: #888899;
+        margin-left: 1em;
+        /* padding-left: -1em; */
+        text-indent: -1em;
+        margin-bottom: 20px;
+        /* font-size: small; */
     }
 
 </style>
@@ -530,6 +539,10 @@ if (!file_exists(PASSWORD_FILE)) {
         <?php echo $COMMON_CSS; ?>
     </head>
     <body>
+        <header>
+            <a href="index.php"><h1><i class="fas fa-bed"></i> 睡眠時間ログ</h1></a>
+        </header>
+
         <div class="container">
             <div class="card setup-card">
                 <h2>パスワード初期設定</h2>
@@ -538,16 +551,16 @@ if (!file_exists(PASSWORD_FILE)) {
                     <div class="form-group">
                         <p class="setup_message">
                             この画面は初回起動時のみ表示されます。<br>
-                            <b>設置者用パスワード</b>を設定してください。<br>
+                            <b>パスワード</b>を設定してください。<br>
                             ここで設定したパスワードを知っている方のみ、ロックを解除して書き込みが行えるようになります。<br><br>
-                            <b>データ保存ディレクトリ:</b> <code>sleep_data/</code><br>
-                            <b>ファイルの役割:</b><br>
-                            ・<code>.password</code>：ここで設定したパスワードが保存されます。<br>
-                            ・<code>log.csv</code>：睡眠記録データが保存されます。<br>
-                            ・<code>.htaccess</code>：sleep_dataディレクトリ内のファイルをWebから直接閲覧できないように保護します。<br><br>
-                            <span style="color:#888;">※これらのファイルは自動生成されます。通常は手動で編集・削除する必要はありません。</span>
+                            <b>ファイル構成とその説明:</b><br>
+                            <code>sleep_data/</code><br>
+                            ├ <code>.password</code> &nbsp;ここで設定したパスワードが保存されます。<br>
+                            ├ <code>log.csv</code> &nbsp;睡眠記録データが保存されます。<br>
+                            └ <code>.htaccess</code> &nbsp;sleep_dataディレクトリ内をWebから閲覧できないようにします。
                         </p>
-                        <label for="setup_password">管理用パスワード</label>
+                        <p class="addtion">※これらのファイルは自動生成されます。通常は手動で編集・削除する必要はありません。初期化するにはディレクトリごと削除してください。</p>
+                        <label for="setup_password">パスワード</label>
                         <input type="password" id="setup_password" name="setup_password" class="form-control setup-input" required>
                     </div>
                     <button type="submit" class="btn setup-btn">設定</button>
