@@ -1383,22 +1383,12 @@ if (file_exists(FILE_PATH)) {
 
         // 日時入力の更新処理
         function updateDateTimeInputs() {
-            // --- ユーザー操作ガード削除 ---
-            // 30分単位のタイミングか、ログファイル更新時のみ更新
-            const dateInput = document.getElementById('date');
-            const timeSelect = document.getElementById('time');
-            if (!dateInput || !timeSelect) return;
-
-            // 現在時刻を取得
+            // ローカルタイム基準で日付を生成
             const now = new Date(Date.now() + 15 * 60 * 1000); // 15分後
             let hour = now.getHours();
             let minute = now.getMinutes();
             // 30分単位に丸め
             minute = minute < 30 ? 0 : 30;
-
-            // 15分00秒・45分00秒のタイミングのみ更新
-            const shouldUpdate = ((now.getMinutes() === 15 || now.getMinutes() === 45) && now.getSeconds() === 0) || window.__logFileUpdated;
-            if (!shouldUpdate) return;
 
             // ローカルタイム基準で日付を生成
             const dateStr = now.getFullYear() + '-' +
@@ -1407,161 +1397,11 @@ if (file_exists(FILE_PATH)) {
             const timeStr = `${hour.toString().padStart(2, '0')}:${minute === 0 ? '00' : '30'}`;
 
             // 値が異なる場合のみ更新
-            if (dateInput.value !== dateStr) dateInput.value = dateStr;
-            if (timeSelect.value !== timeStr) timeSelect.value = timeStr;
-
-            // ログファイル更新フラグをリセット
-            window.__logFileUpdated = false;
-        }
-
-        let lastLogMtime = null;
-        let latestRow = null;
-
-        // 最近の記録テーブルを再描画する関数
-        function reloadRecentLog() {
-            fetch('index.php?action=load_more&offset=0')
-                .then(res => res.json())
-                .then(rows => {
-                    const tbody = document.querySelector('#log tbody');
-                    if (!tbody) return;
-                    tbody.innerHTML = '';
-                    for (const r of rows) {
-                        const tr = document.createElement('tr');
-                        const td1 = document.createElement('td');
-                        const td2 = document.createElement('td');
-                        const td3 = document.createElement('td');
-                        // 日付表示をm/d H:i形式に
-                        td1.textContent = r.sleep.replace(/\d{4}-(\d{2})-(\d{2})T(\d{2}):(\d{2})/, '$1/$2 $3:$4');
-                        if (r.wake) {
-                            td2.textContent = r.wake.replace(/\d{4}-(\d{2})-(\d{2})T(\d{2}):(\d{2})/, '$1/$2 $3:$4');
-                        } else {
-                            td2.textContent = '-';
-                        }
-                        td3.textContent = r.hours !== null ? (parseFloat(r.hours).toFixed(1) + ' h') : '-';
-                        tr.append(td1, td2, td3);
-                        tbody.appendChild(tr);
-                    }
-                    // 最新行をキャッシュ
-                    latestRow = rows.length > 0 ? rows[0] : null;
-                    // 最新行取得後に経過時間を初回描画
-                    updateElapsedTimeJS();
-                });
-        }
-
-        // ログファイルのmtimeを監視し、変化があればテーブルを再描画
-        function checkLogUpdate() {
-            fetch('index.php?action=get_log_mtime')
-                .then(res => res.json())
-                .then(data => {
-                    if (lastLogMtime === null) {
-                        lastLogMtime = data.mtime;
-                        reloadRecentLog(); // 初回は必ず描画
-                    } else if (data.mtime !== lastLogMtime) {
-                        lastLogMtime = data.mtime;
-                        reloadRecentLog();
-                        // --- ログファイル更新時はフォームも更新 ---
-                        window.__logFileUpdated = true;
-                    }
-                });
-        }
-
-        // 1秒ごとに更新
-        setInterval(() => {
-            checkLogUpdate();
-        }, 1000);
-
-        // 初期表示時にも
-        checkLogUpdate();
-
-        // 日付・時刻のデフォルト値セット
-        function setDefaultDateTime() {
-            const now = new Date(Date.now() + 15 * 60 * 1000); // 15分後
-            let hour = now.getHours();
-            let minute = now.getMinutes();
-            minute = minute < 30 ? '00' : '30';
-            // ローカルタイム基準で日付を生成
-            const dateStr = now.getFullYear() + '-' +
-                String(now.getMonth() + 1).padStart(2, '0') + '-' +
-                String(now.getDate()).padStart(2, '0');
-            document.getElementById('date').value = dateStr;
-            // time select生成
+            const dateInput = document.getElementById('date');
             const timeSelect = document.getElementById('time');
-            timeSelect.innerHTML = '';
-            for (let h = 0; h < 24; h++) {
-                for (const m of ['00', '30']) {
-                    const val = `${h.toString().padStart(2, '0')}:${m}`;
-                    const opt = document.createElement('option');
-                    opt.value = val;
-                    opt.textContent = val;
-                    if (val === `${hour.toString().padStart(2, '0')}:${minute}`) opt.selected = true;
-                    timeSelect.appendChild(opt);
-                }
-            }
+            if (dateInput && dateInput.value !== dateStr) dateInput.value = dateStr;
+            if (timeSelect && timeSelect.value !== timeStr) timeSelect.value = timeStr;
         }
-        setDefaultDateTime();
-
-        let lastIsSleep = null;
-        // フォーム行を最新行の状態に更新する関数
-        function updateFormRowByLatestRow() {
-            if (!latestRow) return;
-            // 状態判定
-            const isSleep = !latestRow.wake;
-            if (lastIsSleep === isSleep) return; // 状態が変わったときだけ更新
-            lastIsSleep = isSleep;
-            // ラベル・アイコン
-            const label = isSleep ? '寝た日時' : '起きた日時';
-            const icon = isSleep ? 'fa-bed' : 'fa-sun';
-            const iconKind = isSleep ? 'sleep-icon' : 'wake-icon';
-            const saveName = isSleep ? '起床時間記録' : '就寝時間記録';
-            const buttonColor = isSleep ? 'wake-color' : 'sleep-color';
-            // ラベル部分
-            const labelElem = document.querySelector('label[for="date"]');
-            if (labelElem) {
-                labelElem.innerHTML = `<i class=\"fas ${icon} ${iconKind}\"></i> ${label}`;
-            }
-            // ボタン
-            const btn = document.querySelector('.form-row .btn');
-            if (btn) {
-                btn.innerHTML = `<i class=\"fas fa-save\"></i> ${saveName}`;
-                btn.classList.remove('sleep-color', 'wake-color');
-                btn.classList.add(buttonColor);
-            }
-        }
-
-        // 経過時間の計算・表示（キャッシュした最新行データを使う）
-        let lastElapsedDisplay = '';
-        function updateElapsedTimeJS() {
-            if (!latestRow) return;
-            let latestTimeStr = latestRow.wake || latestRow.sleep;
-            if (!latestTimeStr) return;
-            latestTimeStr = latestTimeStr.replace('T', ' ');
-            const latestDt = new Date(latestTimeStr.replace(/-/g, '/'));
-            const now = new Date();
-            let diffMs = now - latestDt;
-            let sign = '';
-            if (diffMs < 0) { sign = '-'; diffMs = -diffMs; }
-            let minutes = Math.round(diffMs / 1000 / 60 / 30) * 30;
-            let hours = Math.floor(minutes / 60);
-            minutes = minutes % 60;
-            const isSleep = !latestRow.wake;
-            const action = isSleep ? '就寝中' : '起床中';
-            const display = `${action} ${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`.replace('-00:00', '00:00');
-            if (display !== lastElapsedDisplay) {
-                document.getElementById('elapsed-time-value').innerHTML = display;
-                // 🕓アイコンを表示
-                const icon = document.getElementById('elapsed-time-icon');
-                if (icon) icon.style.visibility = 'visible';
-                lastElapsedDisplay = display;
-            }
-            // フォームも更新
-            updateFormRowByLatestRow();
-        }
-        // 1秒ごとに経過時間のみ更新
-        setInterval(updateElapsedTimeJS, 1000);
-        updateElapsedTimeJS();
-
-        // 1秒ごとにフォームの日時を自動チェック
-        setInterval(updateDateTimeInputs, 1000);
 
         // もっと読み込むボタンの処理
         let offset = <?php echo LOAD_LIMIT; ?>;
@@ -1598,6 +1438,129 @@ if (file_exists(FILE_PATH)) {
                 console.error('データ読み込みエラー:', error);
             }
         });
+
+        // --- 時刻セレクトボックスの初期化 ---
+        function initializeTimeSelect() {
+            const timeSelect = document.getElementById('time');
+            if (!timeSelect) return;
+            timeSelect.innerHTML = '';
+            for (let h = 0; h < 24; h++) {
+                for (const m of ['00', '30']) {
+                    const val = `${h.toString().padStart(2, '0')}:${m}`;
+                    const opt = document.createElement('option');
+                    opt.value = val;
+                    opt.textContent = val;
+                    timeSelect.appendChild(opt);
+                }
+            }
+        }
+        // ページ初期表示時に1回だけ呼ぶ
+        initializeTimeSelect();
+
+        // --- 統一的な毎秒更新ロジック（unifiedUpdateLoop）だけを残す ---
+        let lastElapsedDisplay = '';
+        let lastFormDate = '';
+        let lastFormTime = '';
+        let lastLogRows = '';
+        let lastLogMtime = null;
+
+        async function unifiedUpdateLoop() {
+            // 1. ログファイルmtimeチェック
+            let logMtimeChanged = false;
+            let logRows = '';
+            try {
+                const res = await fetch('index.php?action=get_log_mtime');
+                const data = await res.json();
+                if (lastLogMtime === null) {
+                    lastLogMtime = data.mtime;
+                    logMtimeChanged = true;
+                } else if (data.mtime !== lastLogMtime) {
+                    lastLogMtime = data.mtime;
+                    logMtimeChanged = true;
+                }
+            } catch (e) {}
+
+            // 2. 経過時間表示の生成
+            let elapsedDisplay = '';
+            if (window.latestRow) {
+                let latestTimeStr = window.latestRow.wake || window.latestRow.sleep;
+                if (latestTimeStr) {
+                    latestTimeStr = latestTimeStr.replace('T', ' ');
+                    const latestDt = new Date(latestTimeStr.replace(/-/g, '/'));
+                    const now = new Date();
+                    let diffMs = now - latestDt;
+                    let sign = '';
+                    if (diffMs < 0) { sign = '-'; diffMs = -diffMs; }
+                    let minutes = Math.round(diffMs / 1000 / 60 / 30) * 30;
+                    let hours = Math.floor(minutes / 60);
+                    minutes = minutes % 60;
+                    const isSleep = !window.latestRow.wake;
+                    const action = isSleep ? '就寝中' : '起床中';
+                    elapsedDisplay = `${action} ${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`.replace('-00:00', '00:00');
+                }
+            }
+
+            // 3. フォーム値の生成
+            const now = new Date(Date.now() + 15 * 60 * 1000); // 15分後
+            let hour = now.getHours();
+            let minute = now.getMinutes();
+            minute = minute < 30 ? '00' : '30';
+            const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+            const timeStr = `${hour.toString().padStart(2, '0')}:${minute}`;
+
+            // 4. ログ表示内容の生成（必要な場合のみサーバーアクセス）
+            if (logMtimeChanged) {
+                try {
+                    const res = await fetch('index.php?action=load_more&offset=0');
+                    const rows = await res.json();
+                    logRows = JSON.stringify(rows);
+                    // id="log"のtbodyを更新
+                    const tbody = document.querySelector('#log tbody');
+                    if (tbody) {
+                        tbody.innerHTML = '';
+                        for (const r of rows) {
+                            const tr = document.createElement('tr');
+                            const td1 = document.createElement('td');
+                            const td2 = document.createElement('td');
+                            const td3 = document.createElement('td');
+                            td1.textContent = r.sleep.replace(/\d{4}-(\d{2})-(\d{2})T(\d{2}):(\d{2})/, '$1/$2 $3:$4');
+                            if (r.wake) {
+                                td2.textContent = r.wake.replace(/\d{4}-(\d{2})-(\d{2})T(\d{2}):(\d{2})/, '$1/$2 $3:$4');
+                            } else {
+                                td2.textContent = '-';
+                            }
+                            td3.textContent = r.hours !== null ? (parseFloat(r.hours).toFixed(1) + ' h') : '-';
+                            tr.append(td1, td2, td3);
+                            tbody.appendChild(tr);
+                        }
+                        // 最新行をキャッシュ
+                        window.latestRow = rows.length > 0 ? rows[0] : null;
+                    }
+                } catch (e) {}
+            }
+
+            // 5. 経過時間表示の更新
+            if (elapsedDisplay && elapsedDisplay !== lastElapsedDisplay) {
+                document.getElementById('elapsed-time-value').innerHTML = elapsedDisplay;
+                const icon = document.getElementById('elapsed-time-icon');
+                if (icon) icon.style.visibility = 'visible';
+                lastElapsedDisplay = elapsedDisplay;
+            }
+
+            // 6. フォーム値の更新
+            const dateInput = document.getElementById('date');
+            const timeSelect = document.getElementById('time');
+            if (dateInput && dateStr !== lastFormDate) {
+                dateInput.value = dateStr;
+                lastFormDate = dateStr;
+            }
+            if (timeSelect && timeStr !== lastFormTime) {
+                timeSelect.value = timeStr;
+                lastFormTime = timeStr;
+            }
+        }
+        setInterval(unifiedUpdateLoop, 1000);
+        // --- 統一的な毎秒更新ロジックここまで ---
     </script>
 </body>
 </html>
