@@ -1,7 +1,5 @@
 <?php
 mb_internal_encoding("UTF-8");
-// =============================
-// 設置者用: 管理用パスワードは外部ファイル化（初回起動時に自動生成）
 
 define('DATA_DIR', __DIR__ . '/sleep_data');
 define('PASSWORD_FILE', DATA_DIR . '/.password');
@@ -479,10 +477,6 @@ $COMMON_CSS = <<<CSS
         }
     }
     /* パスワード初期設定画面専用 */
-    .setup-card {
-        /* max-width: 400px; */
-        /* margin: 60px auto 0 auto; */
-    }
     .setup-btn {
         width: 100%;
         margin-top: 10px;
@@ -491,7 +485,6 @@ $COMMON_CSS = <<<CSS
         width: 100%;
     }
     .setup_message {
-        /* font-size: small; */
         color:#444444;
         margin-bottom: 10px;
     }
@@ -499,10 +492,8 @@ $COMMON_CSS = <<<CSS
     .addtion {
         color: #888899;
         margin-left: 1em;
-        /* padding-left: -1em; */
         text-indent: -1em;
         margin-bottom: 20px;
-        /* font-size: small; */
     }
 
 </style>
@@ -522,7 +513,7 @@ if (!file_exists(PASSWORD_FILE)) {
         $pw = trim($_POST['setup_password']);
         if ($pw !== '') {
             file_put_contents(PASSWORD_FILE, $pw . "\n");
-            header('Location: index.php');
+            header('Location: ' . $_SERVER['REQUEST_URI']);
             exit;
         } else {
             $setup_error = 'パスワードを入力してください。';
@@ -540,14 +531,14 @@ if (!file_exists(PASSWORD_FILE)) {
     </head>
     <body>
         <header>
-            <a href="index.php"><h1><i class="fas fa-bed"></i> 睡眠時間ログ</h1></a>
+            <a href="./"><h1><i class="fas fa-bed"></i> 睡眠時間ログ</h1></a>
         </header>
 
         <div class="container">
             <div class="card setup-card">
                 <h2>パスワード初期設定</h2>
                 <?php if (!empty($setup_error)) echo '<div class="alert alert-danger">' . htmlspecialchars($setup_error) . '</div>'; ?>
-                <form method="post">
+                <form method="post" action="">
                     <div class="form-group">
                         <p class="setup_message">
                             この画面は初回起動時のみ表示されます。<br>
@@ -951,7 +942,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 save_record($input_datetime);
             }
             // リダイレクト先を設定
-            $redirectTo = 'index.php';
+            $redirectTo = './';
         }
     }
     if (isset($_POST['filedata'])) {
@@ -971,7 +962,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // リダイレクト処理（出力前に実行）
 if ($redirectTo) {
-    header('Location: ' . $redirectTo, true, 303);
+    header('Location: ' . $_SERVER['REQUEST_URI'], true, 303);
     exit;
 }
 
@@ -990,12 +981,12 @@ $stats = calculate_stats();
 </head>
 <body>
     <header>
-        <a href="index.php"><h1><i class="fas fa-bed"></i> 睡眠時間ログ</h1></a>
+        <a href="./"><h1><i class="fas fa-bed"></i> 睡眠時間ログ</h1></a>
     </header>
     
     <div class="container">
         <nav>
-            <a href="#" class="nav-link active" data-tab="record">
+            <a href="./" class="nav-link active" data-tab="record">
                 <i class="fas fa-pencil-alt"></i> 入力
             </a>
             <a href="#" class="nav-link" data-tab="stats">
@@ -1035,7 +1026,7 @@ $stats = calculate_stats();
                 $wake_stat =  $action === 'sleep' ? '就寝中' : '起床中';
                 ?>
                 
-                <form method="post">
+                <form method="post" action="./">
                     <div class="form-group">
                         <label for="date">
                             <i class="fas <?php echo $icon; ?> <?php echo $icon_kind; ?>"></i> <?php echo $label; ?>
@@ -1075,8 +1066,6 @@ $stats = calculate_stats();
                         <thead>
                             <tr>
                                 <th><i class="fas fa-bed sleep-icon"></i> 就寝</th>
-<!--                                <th><i class="fa-solid fa-volume-low sleep-icon" style="transform: rotate(90deg);"></i> 就寝</th>-->
-
                                 <th><i class="fas fa-sun wake-icon"></i> 起床</th>
                                 <th><i class="fas fa-hourglass-half hours-icon"></i> 時間</th>
                             </tr>
@@ -1202,7 +1191,7 @@ $stats = calculate_stats();
         <div id="edit" class="tab-content">
             <div class="card">
                 <h2><i class="fas fa-edit"></i> ログを編集</h2>
-                <form method="post">
+                <form method="post" action="./">
                     <div class="form-group">
                     <textarea name="filedata" id="filedata" class="form-control"><?php
 if (file_exists(LOG_FILE)) {
@@ -1230,11 +1219,9 @@ if (file_exists(LOG_FILE)) {
                 <h2><i class="fas fa-user-lock"></i> 認証</h2>
                 <?php if ($is_authenticated): ?>
                     <div class="authentication-status">
-<!--                        <i class="fas fa-unlock"></i> → <i class="fas fa-lock"></i>-->
-<!--                      <i class="fas fa-lock-open"></i> → <i class="fas fa-lock"></i>-->
                         <p>オーナー認証を解除し、本ブラウザでの書き込みをロックします。</p>
                     </div>
-                    <form method="post">
+                    <form method="post" action="./">
                         <input type="hidden" name="action" value="deauthenticate">
                         <div class="btn-container">
                             <button class="auth-button deauthenticate btn">
@@ -1244,11 +1231,9 @@ if (file_exists(LOG_FILE)) {
                     </form>
                 <?php else: ?>
                     <div class="authentication-status">
-<!--                        <i class="fas fa-lock"></i> → <i class="fas fa-unlock"></i>-->
-<!--                        <i class="fas fa-lock"></i> → <i class="fas fa-lock-open"></i>-->
                         <p>オーナー認証を行い、書き込みロックを解除します。</p>
                     </div>
-                    <form method="post" class="auth-form" id="authForm">
+                    <form method="post" class="auth-form" id="authForm" action="./">
                         <input type="hidden" name="action" value="authenticate">
                         <div class="form-group">
                             <label for="password">パスワードを入力してください</label>
@@ -1375,7 +1360,7 @@ if (file_exists(LOG_FILE)) {
 
         // 経過時間の更新処理
         function updateElapsedTime() {
-            fetch('index.php?action=get_elapsed_time')
+            fetch(location.pathname + '?action=get_elapsed_time')
                 .then(response => response.json())
                 .then(data => {
                     const elapsedTimeElement = document.getElementById('elapsed-time-value');
@@ -1425,7 +1410,7 @@ if (file_exists(LOG_FILE)) {
 
         document.getElementById('loadmore')?.addEventListener('click', async () => {
             try {
-                const res = await fetch('index.php?action=load_more&offset=' + offset);
+                const res = await fetch(location.pathname + '?action=load_more&offset=' + offset);
                 const rows = await res.json();
                 
                 if (rows.length === 0) {
@@ -1485,7 +1470,7 @@ if (file_exists(LOG_FILE)) {
             let logMtimeChanged = false;
             let logRows = '';
             try {
-                const res = await fetch('index.php?action=get_log_mtime');
+                const res = await fetch(location.pathname + '?action=get_log_mtime');
                 const data = await res.json();
                 if (lastLogMtime === null) {
                     lastLogMtime = data.mtime;
@@ -1527,7 +1512,7 @@ if (file_exists(LOG_FILE)) {
             // 4. ログ表示内容の生成（必要な場合のみサーバーアクセス）
             if (logMtimeChanged) {
                 try {
-                    const res = await fetch('index.php?action=load_more&offset=0');
+                    const res = await fetch(location.pathname + '?action=load_more&offset=0');
                     const rows = await res.json();
                     logRows = JSON.stringify(rows);
                     // id="log"のtbodyを更新
