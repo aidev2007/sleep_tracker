@@ -455,8 +455,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // リダイレクト先を設定
             $redirectTo = './';
         }
-    }
-    if (isset($_POST['filedata'])) {
+    } elseif (isset($_POST['filedata'])) {
         $lines = explode("\n", str_replace("\r\n", "\n", $_POST['filedata']));
         $lines = array_filter($lines, 'strlen'); // 空行を除去
         $lines = array_reverse($lines); // 表示時に反転しているので再反転
@@ -468,13 +467,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $content = implode("\n", $lines) . "\n"; // 最後に改行を追加
         file_put_contents(LOG_FILE, mb_convert_encoding($content, 'SJIS', 'UTF-8'));
-        $redirectTo = './'; // PRGパターン：リダイレクトしてフォーム再送信を防止
+        $redirectTo = './?edit_saved=1'; // PRGパターン＋保存成功フラグ
     }
 }
 
 // リダイレクト処理（出力前に実行）
 if ($redirectTo) {
-    header('Location: ' . $_SERVER['REQUEST_URI'], true, 303);
+    error_log('Redirecting to: ' . $redirectTo);
+    header('Location: ' . $redirectTo, true, 303);
     exit;
 }
 
@@ -490,6 +490,25 @@ $stats = calculate_stats();
     <link rel="icon" type="image/svg+xml" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🛌</text></svg>'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <?php echo get_common_css(); ?>
+    <style>
+    .center-toast {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(51,51,51,0.7);
+        color: #fff;
+        padding: 24px 40px;
+        border-radius: 10px;
+        font-size: 1.3rem;
+        z-index: 9999;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+        opacity: 0.95;
+        display: none;
+        pointer-events: none;
+        text-align: center;
+    }
+    </style>
 </head>
 <body>
     <header>
@@ -497,6 +516,7 @@ $stats = calculate_stats();
     </header>
     
     <div class="container">
+        <div id="center-toast" class="center-toast"></div>
         <nav>
             <a href="./" class="nav-link active" data-tab="record">
                 <i class="fas fa-pencil-alt"></i> 入力
@@ -1084,6 +1104,30 @@ if (file_exists(LOG_FILE)) {
         }
         setInterval(unifiedUpdateLoop, 1000);
         // --- 統一的な毎秒更新ロジックここまで ---
+
+        // --- 保存トースト表示 ---
+        function showCenterToast(msg, duration = 1000) {
+            const toast = document.getElementById('center-toast');
+            if (!toast) return;
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, duration);
+        }
+        // URLにedit_savedがあれば表示（値は問わない）
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('edit_saved')) {
+                showCenterToast('保存されました', 1000);
+                // クエリを消してリロードしない（履歴汚さない）
+                setTimeout(() => {
+                    params.delete('edit_saved');
+                    const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+                    window.history.replaceState({}, '', newUrl);
+                }, 1100);
+            }
+        });
     </script>
 </body>
 </html>
