@@ -490,25 +490,6 @@ $stats = calculate_stats();
     <link rel="icon" type="image/svg+xml" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🛌</text></svg>'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <?php echo get_common_css(); ?>
-    <style>
-    .center-toast {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(51,51,51,0.7);
-        color: #fff;
-        padding: 24px 40px;
-        border-radius: 10px;
-        font-size: 1.3rem;
-        z-index: 9999;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-        opacity: 0.95;
-        display: none;
-        pointer-events: none;
-        text-align: center;
-    }
-    </style>
 </head>
 <body>
     <header>
@@ -1604,6 +1585,25 @@ function get_common_css() {
             max-width: 100vw;
         }
     }
+
+    .center-toast {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(51,51,51,0.7);
+        color: #fff;
+        padding: 24px 40px;
+        border-radius: 10px;
+        font-size: 1.3rem;
+        z-index: 9999;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+        opacity: 0.95;
+        display: none;
+        pointer-events: none;
+        text-align: center;
+    }
+
     /* パスワード初期設定画面専用 */
     .setup-btn {
         width: 100%;
