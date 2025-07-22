@@ -424,12 +424,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if (isset($_POST['password']) && $_POST['password'] === $PASSWORD) {
             $is_authenticated = true;
             setcookie('owner_authenticated', '1', time() + 86400 * 30, '/', '', true, true);
+            $redirectTo = './'; // PRGパターン：リダイレクトしてフォーム再送信を防止
         } else {
             $error = 'パスワードが正しくありません。';
         }
     } elseif ($_POST['action'] === 'deauthenticate') {
         setcookie('owner_authenticated', '', time() - 3600, '/', '', true, true);
         $is_authenticated = false;
+        $redirectTo = './'; // PRGパターン：リダイレクトしてフォーム再送信を防止
     }
 } else {
     $is_authenticated = isset($_COOKIE['owner_authenticated']) && $_COOKIE['owner_authenticated'] === '1';
@@ -466,6 +468,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $content = implode("\n", $lines) . "\n"; // 最後に改行を追加
         file_put_contents(LOG_FILE, mb_convert_encoding($content, 'SJIS', 'UTF-8'));
+        $redirectTo = './'; // PRGパターン：リダイレクトしてフォーム再送信を防止
     }
 }
 
@@ -807,10 +810,20 @@ if (file_exists(LOG_FILE)) {
             }
         });
 
-        // フォーム送信時にタブの状態を保持
-        document.querySelector('form').addEventListener('submit', () => {
-            const activeTab = document.querySelector('.nav-link.active').getAttribute('data-tab');
-            localStorage.setItem('sleep_tracker_activeTab', activeTab);
+        // フォーム送信時にタブの状態を保持（全フォーム対応）
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', () => {
+                const activeTab = document.querySelector('.nav-link.active').getAttribute('data-tab');
+                localStorage.setItem('sleep_tracker_activeTab', activeTab);
+            });
+        });
+
+        // ページ読み込み時にタブの状態を復元
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTab = localStorage.getItem('sleep_tracker_activeTab');
+            if (savedTab && tabs.includes(savedTab)) {
+                switchTab(tabs.indexOf(savedTab));
+            }
         });
 
         // グラフの描画
