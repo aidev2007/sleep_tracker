@@ -445,7 +445,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $latest_dt = get_latest_datetime();
 
         if ($latest_dt !== null && $input_dt <= $latest_dt) {
-            $error = '過去の日時は入力できません。最新の記録より後の時間を指定してください。';
+            $error = '記録できない時間が指定されました。最新の記録より後の時間を指定してください。';
         } else {
             if (get_latest_status() === 'sleep') {
                 update_last_record($input_datetime);
