@@ -1363,7 +1363,7 @@ function get_common_css() {
         }
         nav a {
             margin: 0;
-            padding: 8px 15px;
+            padding: 8px 10px;
             font-size: 0.9rem;
         }
         .stats-grid {
