@@ -800,12 +800,12 @@ if (file_exists(LOG_FILE)) {
             });
         });
 
-        // PageUp/PageDownキーでのタブ切り替え
+        // ←/→キーでのタブ切り替え
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'PageUp') {
+            if (e.key === 'ArrowLeft') {
                 e.preventDefault();
                 switchTab(currentTabIndex - 1);
-            } else if (e.key === 'PageDown') {
+            } else if (e.key === 'ArrowRight') {
                 e.preventDefault();
                 switchTab(currentTabIndex + 1);
             }
