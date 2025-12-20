@@ -27,9 +27,10 @@ if (!file_exists(PASSWORD_FILE)) {
             $setup_error = 'パスワードを入力してください。';
         }
     }
-    ?>
+?>
     <!DOCTYPE html>
     <html lang="ja">
+
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -37,9 +38,12 @@ if (!file_exists(PASSWORD_FILE)) {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <?php echo get_common_css(); ?>
     </head>
+
     <body>
         <header>
-            <a href="./"><h1><i class="fas fa-bed"></i> 睡眠時間ログ</h1></a>
+            <a href="./">
+                <h1><i class="fas fa-bed"></i> 睡眠時間ログ</h1>
+            </a>
         </header>
 
         <div class="container">
@@ -67,38 +71,40 @@ if (!file_exists(PASSWORD_FILE)) {
             </div>
         </div>
     </body>
+
     </html>
-    <?php
+<?php
     exit;
 }
 
 // パスワード読み込み
 $PASSWORD = trim(file_get_contents(PASSWORD_FILE));
 
-function load_data($offset = 0, $limit = LOAD_LIMIT) {
+function load_data($offset = 0, $limit = LOAD_LIMIT)
+{
     if (!file_exists(LOG_FILE)) return [];
-    
+
     try {
         $lines = array_reverse(file(LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
         $records = [];
         foreach ($lines as $i => $line) {
             if ($i < $offset) continue;
             if (count($records) >= $limit) break;
-            
+
             try {
                 $fields = str_getcsv(mb_convert_encoding($line, 'UTF-8', 'SJIS'));
                 if (count($fields) >= 2) {
                     // 日付の妥当性チェック
                     $sleep = trim($fields[0]);
                     $wake = trim($fields[1]);
-                    
+
                     if ($sleep === '') continue; // 就寝時間が空の行はスキップ
-                    
+
                     try {
                         $sleep_dt = new DateTime($sleep);
                         $wake_dt = $wake !== '' ? new DateTime($wake) : null;
                         $hours = $wake_dt ? round(($wake_dt->getTimestamp() - $sleep_dt->getTimestamp()) / 3600, 2) : '-';
-                        
+
                         $records[] = [
                             'sleep' => $sleep,
                             'wake' => $wake,
@@ -121,7 +127,8 @@ function load_data($offset = 0, $limit = LOAD_LIMIT) {
     }
 }
 
-function calculate_stats() {
+function calculate_stats()
+{
     $data = load_data(0, 1000); // 十分な量のデータを取得
     if (empty($data)) return [
         'average' => 0,
@@ -132,24 +139,24 @@ function calculate_stats() {
         'start_date' => null,
         'days_count' => 0
     ];
-    
+
     $hours = [];
     $complete_records = 0;
     $start_date = null;
-    
+
     foreach ($data as $record) {
         if ($record['wake'] && $record['hours'] !== '-') {
             $hours[] = $record['hours'];
             $complete_records++;
         }
-        
+
         // 開始日を更新
         $sleep_dt = new DateTime($record['sleep']);
         if ($start_date === null || $sleep_dt < $start_date) {
             $start_date = $sleep_dt;
         }
     }
-    
+
     // 経過日数の計算
     $days_count = 0;
     if ($start_date) {
@@ -157,7 +164,7 @@ function calculate_stats() {
         $interval = $now->diff($start_date);
         $days_count = $interval->days;
     }
-    
+
     return [
         'average' => !empty($hours) ? round(array_sum($hours) / count($hours), 2) : 0,
         'min' => !empty($hours) ? min($hours) : 0,
@@ -169,7 +176,8 @@ function calculate_stats() {
     ];
 }
 
-function calculate_daily_sleep_stats() {
+function calculate_daily_sleep_stats()
+{
     $data = load_data(0, 1000);
     if (empty($data)) return [];
 
@@ -233,7 +241,9 @@ function calculate_daily_sleep_stats() {
     $yesterday_str = (new DateTime('yesterday'))->format('Y-m-d');
     $filtered_sleep = array_filter(
         $daily_sleep,
-        function($k) use ($yesterday_str) { return $k <= $yesterday_str; },
+        function ($k) use ($yesterday_str) {
+            return $k <= $yesterday_str;
+        },
         ARRAY_FILTER_USE_KEY
     );
 
@@ -257,14 +267,15 @@ function calculate_daily_sleep_stats() {
     ];
 }
 
-function save_record($sleep, $wake = '') {
+function save_record($sleep, $wake = '')
+{
     try {
         $sleep = trim($sleep);
         $wake = trim($wake);
-        
+
         // 日付の妥当性チェック
         if ($sleep === '') return false;
-        
+
         try {
             new DateTime($sleep);
             if ($wake !== '') {
@@ -273,7 +284,7 @@ function save_record($sleep, $wake = '') {
         } catch (Exception $e) {
             return false;
         }
-        
+
         $dir = dirname(LOG_FILE);
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
@@ -285,16 +296,17 @@ function save_record($sleep, $wake = '') {
     }
 }
 
-function update_last_record($wake) {
+function update_last_record($wake)
+{
     if (!file_exists(LOG_FILE)) return false;
-    
+
     try {
         $lines = file(LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         if (empty($lines)) return false;
-        
+
         $lastLine = array_pop($lines);
         $fields = str_getcsv(mb_convert_encoding($lastLine, 'UTF-8', 'SJIS'));
-        
+
         if (count($fields) >= 2 && trim($fields[1]) === '') {
             try {
                 new DateTime(trim($wake));
@@ -314,7 +326,8 @@ function update_last_record($wake) {
     }
 }
 
-function get_latest_status() {
+function get_latest_status()
+{
     if (!file_exists(LOG_FILE)) return 'wake'; // ログがなければ「起床中」
     $lines = array_reverse(file(LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
     foreach ($lines as $line) {
@@ -327,7 +340,8 @@ function get_latest_status() {
     return 'wake'; // 有効な記録がなければ「起床中」
 }
 
-function get_latest_datetime() {
+function get_latest_datetime()
+{
     if (!file_exists(LOG_FILE)) return null;
     $lines = array_reverse(file(LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
     foreach ($lines as $line) {
@@ -343,7 +357,8 @@ function get_latest_datetime() {
     return null;
 }
 
-function calculate_elapsed_time($action) {
+function calculate_elapsed_time($action)
+{
     $latest_dt = get_latest_datetime();
     if ($latest_dt === null) return null;
 
@@ -365,7 +380,7 @@ $redirectTo = '';
 // APIエンドポイントの処理
 if (isset($_GET['action'])) {
     header('Content-Type: application/json');
-    
+
     if ($_GET['action'] === 'get_elapsed_time') {
         $action = get_latest_status();
         $wake_stat =  $action === 'sleep' ? '就寝中' : '起床中';
@@ -374,7 +389,7 @@ if (isset($_GET['action'])) {
         echo json_encode(['display' => $display]);
         exit;
     }
-    
+
     if ($_GET['action'] === 'get_current_datetime') {
         // 15分後の時刻をベースに計算
         $now = new DateTime();
@@ -382,12 +397,12 @@ if (isset($_GET['action'])) {
         $date = $now->format('Y-m-d');
         $hour = $now->format('H');
         $minute = (int)$now->format('i');
-        
+
         // 30分単位の丸め処理（15分加算済みの時刻を前提）
         $minute = $minute < 30 ? '00' : '30';
-        
+
         $time = $hour . ':' . $minute;
-        
+
         echo json_encode([
             'date' => $date,
             'time' => $time
@@ -483,6 +498,7 @@ $stats = calculate_stats();
 ?>
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -491,11 +507,14 @@ $stats = calculate_stats();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <?php echo get_common_css(); ?>
 </head>
+
 <body>
     <header>
-        <a href="./"><h1><i class="fas fa-bed"></i> 睡眠時間ログ</h1></a>
+        <a href="./">
+            <h1><i class="fas fa-bed"></i> 睡眠時間ログ</h1>
+        </a>
     </header>
-    
+
     <div class="container">
         <div id="center-toast" class="center-toast"></div>
         <nav>
@@ -512,17 +531,17 @@ $stats = calculate_stats();
                 <i class="fas fa-user-lock"></i> 認証
             </a>
         </nav>
-        
+
         <div id="record" class="tab-content active">
             <div class="card">
                 <h2><i class="fas fa-clock"></i> 睡眠記録の入力</h2>
-                
+
                 <?php if ($error): ?>
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
-                </div>
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
+                    </div>
                 <?php endif; ?>
-                
+
                 <?php
                 $action = get_latest_status();
                 $now = new DateTime();
@@ -538,7 +557,7 @@ $stats = calculate_stats();
                 $button_color = $action === 'sleep' ? 'wake-color' : 'sleep-color';
                 $wake_stat =  $action === 'sleep' ? '就寝中' : '起床中';
                 ?>
-                
+
                 <form method="post" action="./">
                     <div class="form-group">
                         <label for="date">
@@ -559,19 +578,19 @@ $stats = calculate_stats();
                             <div class="btn-container">
                                 <button type="submit" class="btn <?php echo $button_color; ?> <?php echo !$is_authenticated ? 'disabled' : ''; ?>" <?php echo !$is_authenticated ? 'disabled' : ''; ?>>
                                     <i class="fas fa-save"></i> <?php echo $save_name; ?>
-                                    
+
                                 </button>
                             </div>
                         </div>
-                        
+
                         <div id="elapsed-time" class="elapsed-time">
                             <i class="fas fa-clock" id="elapsed-time-icon" style="visibility:hidden"></i> <span id="elapsed-time-value"></span>
                         </div>
-                        
+
                     </div>
                 </form>
             </div>
-            
+
             <div class="card">
                 <h2><i class="fas fa-history"></i> 最近の記録</h2>
                 <div class="table-container">
@@ -586,25 +605,25 @@ $stats = calculate_stats();
                         <tbody>
                             <?php foreach (load_data(0) as $row): ?>
                                 <tr>
-                                    <td><?php 
+                                    <td><?php
                                         $sleep_dt = new DateTime($row['sleep']);
                                         echo htmlspecialchars($sleep_dt->format('m/d H:i'));
-                                    ?></td>
-                                    <td><?php 
+                                        ?></td>
+                                    <td><?php
                                         if ($row['wake'] !== '') {
                                             $wake_dt = new DateTime($row['wake']);
                                             echo htmlspecialchars($wake_dt->format('m/d H:i'));
                                         } else {
                                             echo '-';
                                         }
-                                    ?></td>
-                                    <td><?php 
+                                        ?></td>
+                                    <td><?php
                                         if ($row['hours'] !== '-') {
                                             echo number_format($row['hours'], 1) . ' h';
                                         } else {
                                             echo '-';
                                         }
-                                    ?></td>
+                                        ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -706,16 +725,16 @@ $stats = calculate_stats();
                 <h2><i class="fas fa-edit"></i> ログを編集</h2>
                 <form method="post" action="./">
                     <div class="form-group">
-                    <textarea name="filedata" id="filedata" class="form-control"><?php
-if (file_exists(LOG_FILE)) {
-    $lines = array_reverse(file(LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
-    // Tをスペースに置換して表示
-    foreach ($lines as &$l) {
-        $l = preg_replace('/T/', ' ', $l);
-    }
-    echo htmlspecialchars(mb_convert_encoding(implode("\n", $lines) . "\n", 'UTF-8', 'SJIS'));
-}
-?></textarea>
+                        <textarea name="filedata" id="filedata" class="form-control"><?php
+                                                                                        if (file_exists(LOG_FILE)) {
+                                                                                            $lines = array_reverse(file(LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+                                                                                            // Tをスペースに置換して表示
+                                                                                            foreach ($lines as &$l) {
+                                                                                                $l = preg_replace('/T/', ' ', $l);
+                                                                                            }
+                                                                                            echo htmlspecialchars(mb_convert_encoding(implode("\n", $lines) . "\n", 'UTF-8', 'SJIS'));
+                                                                                        }
+                                                                                        ?></textarea>
                     </div>
                     <div class="btn-container">
                         <button type="submit" class="btn <?php echo !$is_authenticated ? 'disabled' : ''; ?>" <?php echo !$is_authenticated ? 'disabled' : ''; ?>>
@@ -762,7 +781,7 @@ if (file_exists(LOG_FILE)) {
             </div>
         </div>
     </div>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // タブ切り替えの処理
@@ -773,11 +792,11 @@ if (file_exists(LOG_FILE)) {
             // インデックスの範囲チェック
             if (index < 0) index = tabs.length - 1;
             if (index >= tabs.length) index = 0;
-            
+
             // アクティブなタブを更新
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             document.querySelector(`[data-tab="${tabs[index]}"]`).classList.add('active');
-            
+
             // コンテンツの表示/非表示を切り替え
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
@@ -786,7 +805,7 @@ if (file_exists(LOG_FILE)) {
 
             // 現在のタブをlocalStorageに保存
             localStorage.setItem('sleep_tracker_activeTab', tabs[index]);
-            
+
             // 現在のインデックスを更新
             currentTabIndex = index;
         }
@@ -837,7 +856,9 @@ if (file_exists(LOG_FILE)) {
         // 昨日までのデータのみ抽出
         $filtered = array_filter(
             $daily_stats['daily_sleep'] ?? [],
-            function($k) use ($yesterday) { return $k <= $yesterday; },
+            function ($k) use ($yesterday) {
+                return $k <= $yesterday;
+            },
             ARRAY_FILTER_USE_KEY
         );
         // 末尾30件（昨日までの30日分）
@@ -935,28 +956,28 @@ if (file_exists(LOG_FILE)) {
             try {
                 const res = await fetch(location.pathname + '?action=load_more&offset=' + offset);
                 const rows = await res.json();
-                
+
                 if (rows.length === 0) {
                     hasMoreData = false;
                     document.getElementById('loadmore').classList.remove('visible');
                     return;
                 }
-                
+
                 const table = document.getElementById('log');
                 for (const r of rows) {
                     const tr = document.createElement('tr');
                     const td1 = document.createElement('td');
                     const td2 = document.createElement('td');
                     const td3 = document.createElement('td');
-                    
+
                     td1.textContent = r.sleep.replace('T', ' ');
                     td2.textContent = r.wake ? r.wake.replace('T', ' ') : '-';
                     td3.textContent = r.hours !== null ? r.hours : '-';
-                    
+
                     tr.append(td1, td2, td3);
                     table.querySelector('tbody').appendChild(tr);
                 }
-                
+
                 offset += rows.length;
             } catch (error) {
                 console.error('データ読み込みエラー:', error);
@@ -1014,7 +1035,10 @@ if (file_exists(LOG_FILE)) {
                     const now = new Date();
                     let diffMs = now - latestDt;
                     let sign = '';
-                    if (diffMs < 0) { sign = '-'; diffMs = -diffMs; }
+                    if (diffMs < 0) {
+                        sign = '-';
+                        diffMs = -diffMs;
+                    }
                     let minutes = Math.round(diffMs / 1000 / 60 / 30) * 30;
                     let hours = Math.floor(minutes / 60);
                     minutes = minutes % 60;
@@ -1111,12 +1135,14 @@ if (file_exists(LOG_FILE)) {
         });
     </script>
 </body>
+
 </html>
 
 <?php
 
 // 共通CSS
-function get_common_css() {
+function get_common_css()
+{
     return <<<CSS
 <style>
     :root {
@@ -1578,8 +1604,8 @@ function get_common_css() {
     }
     @media (max-width: 700px) {
         .container, .card {
-            max-width: 98vw;
-            padding: 10px;
+            max-width: 99vw;
+            /*padding: 10px;*/
         }
         .btn {
             max-width: 100vw;
