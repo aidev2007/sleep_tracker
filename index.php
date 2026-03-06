@@ -1025,38 +1025,7 @@ $stats = calculate_stats();
                 }
             } catch (e) {}
 
-            // 2. 経過時間表示の生成
-            let elapsedDisplay = '';
-            if (window.latestRow) {
-                let latestTimeStr = window.latestRow.wake || window.latestRow.sleep;
-                if (latestTimeStr) {
-                    latestTimeStr = latestTimeStr.replace('T', ' ');
-                    const latestDt = new Date(latestTimeStr.replace(/-/g, '/'));
-                    const now = new Date();
-                    let diffMs = now - latestDt;
-                    let sign = '';
-                    if (diffMs < 0) {
-                        sign = '-';
-                        diffMs = -diffMs;
-                    }
-                    let minutes = Math.round(diffMs / 1000 / 60 / 30) * 30;
-                    let hours = Math.floor(minutes / 60);
-                    minutes = minutes % 60;
-                    const isSleep = !window.latestRow.wake;
-                    const action = isSleep ? '就寝中' : '起床中';
-                    elapsedDisplay = `${action} ${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`.replace('-00:00', '00:00');
-                }
-            }
-
-            // 3. フォーム値の生成
-            const now = new Date(Date.now() + 15 * 60 * 1000); // 15分後
-            let hour = now.getHours();
-            let minute = now.getMinutes();
-            minute = minute < 30 ? '00' : '30';
-            const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-            const timeStr = `${hour.toString().padStart(2, '0')}:${minute}`;
-
-            // 4. ログ表示内容の生成（必要な場合のみサーバーアクセス）
+            // 2. ログ表示内容の生成（必要な場合のみサーバーアクセス）
             if (logMtimeChanged) {
                 try {
                     const res = await fetch(location.pathname + '?action=load_more&offset=0');
@@ -1087,6 +1056,37 @@ $stats = calculate_stats();
                 } catch (e) {}
             }
 
+            // 3. 経過時間表示の生成
+            let elapsedDisplay = '';
+            if (window.latestRow) {
+                let latestTimeStr = window.latestRow.wake || window.latestRow.sleep;
+                if (latestTimeStr) {
+                    latestTimeStr = latestTimeStr.replace('T', ' ');
+                    const latestDt = new Date(latestTimeStr.replace(/-/g, '/'));
+                    const now = new Date();
+                    let diffMs = now - latestDt;
+                    let sign = '';
+                    if (diffMs < 0) {
+                        sign = '-';
+                        diffMs = -diffMs;
+                    }
+                    let minutes = Math.round(diffMs / 1000 / 60 / 30) * 30;
+                    let hours = Math.floor(minutes / 60);
+                    minutes = minutes % 60;
+                    const isSleep = !window.latestRow.wake;
+                    const action = isSleep ? '就寝中' : '起床中';
+                    elapsedDisplay = `${action} ${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`.replace('-00:00', '00:00');
+                }
+            }
+
+            // 4. フォーム値の生成
+            const now = new Date(Date.now() + 15 * 60 * 1000); // 15分後
+            let hour = now.getHours();
+            let minute = now.getMinutes();
+            minute = minute < 30 ? '00' : '30';
+            const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+            const timeStr = `${hour.toString().padStart(2, '0')}:${minute}`;
+
             // 5. 経過時間表示の更新
             if (elapsedDisplay && elapsedDisplay !== lastElapsedDisplay) {
                 document.getElementById('elapsed-time-value').innerHTML = elapsedDisplay;
@@ -1107,6 +1107,7 @@ $stats = calculate_stats();
                 lastFormTime = timeStr;
             }
         }
+        unifiedUpdateLoop();
         setInterval(unifiedUpdateLoop, 1000);
         // --- 統一的な毎秒更新ロジックここまで ---
 
